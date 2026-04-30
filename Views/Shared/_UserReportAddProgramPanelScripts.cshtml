@@ -1,0 +1,432 @@
+@{
+    var hasTable = ViewData["UserReportAddProgramHasTable"] as bool? ?? true;
+}
+<script>
+    (function () {
+        var HAS_TABLE = @hasTable.ToString().ToLowerInvariant();
+        var table = HAS_TABLE ? document.getElementById('papDetailTable') : null;
+        var searchInput = document.getElementById('userPapTableSearch');
+        var addBtn = document.getElementById('userPapTableAddBtn');
+        var addModalEl = document.getElementById('userReportAddProgramPanel');
+        var addSaveBtn = document.getElementById('userReportAddProgramSave');
+        var footerAdd = document.getElementById('userReportAddProgramFooterAdd');
+        var footerEdit = document.getElementById('userReportAddProgramFooterEdit');
+        var editDraftBtn = document.getElementById('userReportAddProgramEditDraft');
+        var editDroppedBtn = document.getElementById('userReportAddProgramEditDropped');
+        var editEndorsedBtn = document.getElementById('userReportAddProgramEditEndorsed');
+        var addTitleEl = document.getElementById('userReportAddProgramPanelLabel');
+        if (!addModalEl || typeof bootstrap === 'undefined') return;
+        if (HAS_TABLE && !table) return;
+
+        var addModal = bootstrap.Modal.getOrCreateInstance(addModalEl);
+        var userReportEditRow = null;
+
+        function setAddProgramModalFooterMode(isEdit) {
+            if (footerAdd) footerAdd.classList.toggle('d-none', !!isEdit);
+            if (footerEdit) footerEdit.classList.toggle('d-none', !isEdit);
+        }
+
+        addModalEl.addEventListener('shown.bs.modal', function () {
+            syncRemarksContinuingNewUi();
+            updateAddProgramSaveButtonLabel();
+        });
+        addModalEl.addEventListener('input', updateAddProgramSaveButtonLabel);
+        addModalEl.addEventListener('change', function (e) {
+            if (e.target && e.target.id === 'userAddPapRemarksContinuingType') {
+                var o = document.getElementById('userAddPapRemarksContinuingOther');
+                if (e.target.value !== 'Others' && o) o.value = '';
+                syncRemarksContinuingNewUi();
+            }
+            updateAddProgramSaveButtonLabel();
+        });
+
+        var MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        function syncPapEllipsisTooltips(root) {
+            if (!root) return;
+            root.querySelectorAll('input.dashboard-pap-text-input--ellipsis').forEach(function (el) {
+                el.setAttribute('title', el.value);
+            });
+            root.querySelectorAll('select.dashboard-pap-select').forEach(function (sel) {
+                var opt = sel.options[sel.selectedIndex];
+                sel.setAttribute('title', opt ? (opt.text || opt.value).trim() : '');
+            });
+        }
+
+        function setSelectValue(sel, value) {
+            if (!sel || value == null) return;
+            var v = String(value).trim();
+            for (var i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value === v) {
+                    sel.selectedIndex = i;
+                    return;
+                }
+            }
+        }
+
+        function parseMonthFromCell(str) {
+            if (!str || typeof str !== 'string') return '';
+            var s = str.trim();
+            if (!s) return '';
+            var token = s.split(/\s+/)[0].toLowerCase();
+            var map3 = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+            if (token.length >= 3) {
+                var key = token.substring(0, 3);
+                if (map3[key] !== undefined) return String(map3[key]);
+            }
+            var full = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+            for (var i = 0; i < full.length; i++) {
+                if (token === full[i]) return String(i + 1);
+            }
+            return '';
+        }
+
+        function formatMonthYearForCell(monthNumStr, yearStr) {
+            var n = parseInt(monthNumStr, 10);
+            var y = parseInt(yearStr, 10);
+            if (isNaN(n) || n < 1 || n > 12) return '';
+            if (isNaN(y) || y < 1900) y = new Date().getFullYear();
+            return MONTH_SHORT[n - 1] + ' ' + y;
+        }
+
+        function getReportYear() {
+            if (table) {
+                var y = table.getAttribute('data-report-year');
+                var n = parseInt(y, 10);
+                if (!isNaN(n)) return n;
+            }
+            return new Date().getFullYear();
+        }
+
+        function needsPriorityNo() {
+            return !table || table.classList.contains('dashboard-pap-table--priority-col');
+        }
+
+        function isUserAddPapFormComplete() {
+            function el(id) { return document.getElementById(id); }
+            var name = el('userAddPapName');
+            var resp = el('userAddPapResponsible');
+            var budget = el('userAddPapBudget');
+            var ts = el('userAddPapTimeStart');
+            var te = el('userAddPapTimeEnd');
+            var org = el('userAddPapOrg');
+            if (!name || !resp || !budget || !ts || !te || !org) return false;
+            if (!String(name.value || '').trim()) return false;
+            if (!String(resp.value || '').trim()) return false;
+            var b = String(budget.value || '').trim();
+            if (b === '' || isNaN(parseFloat(b))) return false;
+            if (parseFloat(b) < 0) return false;
+            if (!String(ts.value || '').trim()) return false;
+            if (!String(te.value || '').trim()) return false;
+            if (!String(org.value || '').trim()) return false;
+            if (needsPriorityNo()) {
+                var pr = el('userAddPapPriorityNo');
+                if (!pr) return false;
+                var pv = String(pr.value || '').trim();
+                if (pv === '') return false;
+                var pn = parseInt(pv, 10);
+                if (isNaN(pn) || pn < 1) return false;
+            }
+            var rType = el('userAddPapRemarksContinuingType');
+            if (!rType || !String(rType.value || '').trim()) return false;
+            if (rType.value === 'Others') {
+                var rO = el('userAddPapRemarksContinuingOther');
+                if (!rO || !String(rO.value || '').trim()) return false;
+            }
+            return true;
+        }
+
+        function updateAddProgramSaveButtonLabel() {
+            if (!addSaveBtn) return;
+            addSaveBtn.textContent = isUserAddPapFormComplete() ? 'Save' : 'Save as Endorsed';
+        }
+
+        function syncRemarksContinuingNewUi() {
+            var typeSel = document.getElementById('userAddPapRemarksContinuingType');
+            var wrap = document.getElementById('userAddPapRemarksContinuingOtherWrap');
+            var oth = document.getElementById('userAddPapRemarksContinuingOther');
+            if (!typeSel || !wrap) return;
+            var show = typeSel.value === 'Others';
+            wrap.classList.toggle('d-none', !show);
+            if (oth) oth.disabled = !show;
+        }
+
+        function setRemarksContinuingFromCell(raw) {
+            var s = String(raw || '').trim();
+            var typeSel = document.getElementById('userAddPapRemarksContinuingType');
+            var oth = document.getElementById('userAddPapRemarksContinuingOther');
+            if (!typeSel) return;
+            var fixed = ['Continuing', 'New', 'Terminated'];
+            var i;
+            for (i = 0; i < fixed.length; i++) {
+                if (s === fixed[i]) {
+                    setSelectValue(typeSel, fixed[i]);
+                    if (oth) oth.value = '';
+                    syncRemarksContinuingNewUi();
+                    return;
+                }
+            }
+            if (s === 'Others' || s.toLowerCase().indexOf('others:') === 0) {
+                setSelectValue(typeSel, 'Others');
+                if (oth) {
+                    oth.value = s.toLowerCase().indexOf('others:') === 0
+                        ? s.replace(/^others:\s*/i, '').trim()
+                        : (s === 'Others' ? '' : s);
+                }
+                syncRemarksContinuingNewUi();
+                return;
+            }
+            if (s) {
+                setSelectValue(typeSel, 'Others');
+                if (oth) oth.value = s;
+            } else {
+                if (typeSel) typeSel.selectedIndex = 0;
+                if (oth) oth.value = '';
+            }
+            syncRemarksContinuingNewUi();
+        }
+
+        function buildRemarksContinuingCellValue() {
+            var typeSel = document.getElementById('userAddPapRemarksContinuingType');
+            var oth = document.getElementById('userAddPapRemarksContinuingOther');
+            var t = typeSel && typeSel.value;
+            var otherText = oth && String(oth.value || '').trim();
+            if (t === 'Others') {
+                return otherText ? ('Others: ' + otherText) : 'Others';
+            }
+            return t || '';
+        }
+
+        function colOffset() {
+            return table && table.classList.contains('dashboard-pap-table--priority-col') ? 1 : 0;
+        }
+
+        function parseBudgetToNumberString(cellVal) {
+            var s = String(cellVal || '').replace(/[^\d.]/g, '');
+            if (!s) return '';
+            var n = parseFloat(s);
+            return isNaN(n) ? '' : String(n);
+        }
+
+        function formatBudgetForCell(numStr) {
+            var n = parseFloat(numStr, 10);
+            if (isNaN(n)) return '';
+            return '₱' + n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function resetUserAddPapForm() {
+            ['userAddPapPriorityNo', 'userAddPapName', 'userAddPapResponsible', 'userAddPapBudget', 'userAddPapRemarksContinuingOther', 'userAddPapRemarks'].forEach(function (id) {
+                var elx = document.getElementById(id);
+                if (elx) elx.value = '';
+            });
+            ['userAddPapRemarksContinuingType', 'userAddPapOrg', 'userAddPapTimeStart', 'userAddPapTimeEnd', 'userAddPapGrowth', 'userAddPapAchieve', 'userAddPapQ1', 'userAddPapQ2', 'userAddPapQ3', 'userAddPapQ4'].forEach(function (id) {
+                var sel = document.getElementById(id);
+                if (sel) sel.selectedIndex = 0;
+            });
+            syncRemarksContinuingNewUi();
+        }
+
+        function fillAddModalFromRow(tr) {
+            if (!tr || !table) return;
+            var tds = tr.querySelectorAll('td');
+            var o = colOffset();
+            if (tds.length < 15 + o) return;
+
+            var prEl = document.getElementById('userAddPapPriorityNo');
+            if (o && prEl) prEl.value = (tds[0].textContent || '').trim();
+
+            var inpName = tds[o + 0].querySelector('input');
+            var inpResp = tds[o + 1].querySelector('input');
+            var inpBudget = tds[o + 2].querySelector('input');
+            var inpStart = tds[o + 3].querySelector('input');
+            var inpEnd = tds[o + 4].querySelector('input');
+            var inpSupport = tds[o + 5].querySelector('input');
+            var selGrowth = tds[o + 6].querySelector('select');
+            var selAchieve = tds[o + 7].querySelector('select');
+            var inpCont = tds[o + 8].querySelector('input');
+            var selQ1 = tds[o + 9].querySelector('select');
+            var selQ2 = tds[o + 10].querySelector('select');
+            var selQ3 = tds[o + 11].querySelector('select');
+            var selQ4 = tds[o + 12].querySelector('select');
+            var inpRem = tds[o + 13].querySelector('input, textarea');
+
+            if (inpName) document.getElementById('userAddPapName').value = inpName.value;
+            if (inpResp) document.getElementById('userAddPapResponsible').value = inpResp.value;
+            if (inpBudget) document.getElementById('userAddPapBudget').value = parseBudgetToNumberString(inpBudget.value);
+            if (inpStart) setSelectValue(document.getElementById('userAddPapTimeStart'), parseMonthFromCell(inpStart.value));
+            if (inpEnd) setSelectValue(document.getElementById('userAddPapTimeEnd'), parseMonthFromCell(inpEnd.value));
+            if (inpSupport) setSelectValue(document.getElementById('userAddPapOrg'), inpSupport.value.trim());
+            if (selGrowth) setSelectValue(document.getElementById('userAddPapGrowth'), selGrowth.value);
+            if (selAchieve) setSelectValue(document.getElementById('userAddPapAchieve'), selAchieve.value);
+            if (inpCont) setRemarksContinuingFromCell(inpCont.value);
+            if (selQ1) setSelectValue(document.getElementById('userAddPapQ1'), selQ1.value);
+            if (selQ2) setSelectValue(document.getElementById('userAddPapQ2'), selQ2.value);
+            if (selQ3) setSelectValue(document.getElementById('userAddPapQ3'), selQ3.value);
+            if (selQ4) setSelectValue(document.getElementById('userAddPapQ4'), selQ4.value);
+            if (inpRem) document.getElementById('userAddPapRemarks').value = inpRem.value;
+        }
+
+        function applyAddModalToRow(tr) {
+            if (!tr || !table) return;
+            var tds = tr.querySelectorAll('td');
+            var o = colOffset();
+            if (tds.length < 15 + o) return;
+
+            var year = String(getReportYear());
+            var ts = document.getElementById('userAddPapTimeStart');
+            var te = document.getElementById('userAddPapTimeEnd');
+
+            if (o) {
+                var pr = document.getElementById('userAddPapPriorityNo');
+                if (pr && tds[0]) tds[0].textContent = (pr.value || '').trim();
+            }
+
+            var inpName = tds[o + 0].querySelector('input');
+            var inpResp = tds[o + 1].querySelector('input');
+            var inpBudget = tds[o + 2].querySelector('input');
+            var inpStart = tds[o + 3].querySelector('input');
+            var inpEnd = tds[o + 4].querySelector('input');
+            var inpSupport = tds[o + 5].querySelector('input');
+            var selGrowth = tds[o + 6].querySelector('select');
+            var selAchieve = tds[o + 7].querySelector('select');
+            var inpCont = tds[o + 8].querySelector('input');
+            var selQ1 = tds[o + 9].querySelector('select');
+            var selQ2 = tds[o + 10].querySelector('select');
+            var selQ3 = tds[o + 11].querySelector('select');
+            var selQ4 = tds[o + 12].querySelector('select');
+            var inpRem = tds[o + 13].querySelector('input, textarea');
+
+            var el;
+            el = document.getElementById('userAddPapName');
+            if (inpName && el) inpName.value = el.value;
+            el = document.getElementById('userAddPapResponsible');
+            if (inpResp && el) inpResp.value = el.value;
+            el = document.getElementById('userAddPapBudget');
+            if (inpBudget && el) inpBudget.value = formatBudgetForCell(el.value);
+            if (inpStart && ts) {
+                var ms = ts.value;
+                inpStart.value = ms ? formatMonthYearForCell(ms, year) : '';
+            }
+            if (inpEnd && te) {
+                var me = te.value;
+                inpEnd.value = me ? formatMonthYearForCell(me, year) : '';
+            }
+            el = document.getElementById('userAddPapOrg');
+            if (inpSupport && el) inpSupport.value = el.value;
+            el = document.getElementById('userAddPapGrowth');
+            if (selGrowth && el) setSelectValue(selGrowth, el.value);
+            el = document.getElementById('userAddPapAchieve');
+            if (selAchieve && el) setSelectValue(selAchieve, el.value);
+            if (inpCont) inpCont.value = buildRemarksContinuingCellValue();
+            el = document.getElementById('userAddPapQ1');
+            if (selQ1 && el) setSelectValue(selQ1, el.value);
+            el = document.getElementById('userAddPapQ2');
+            if (selQ2 && el) setSelectValue(selQ2, el.value);
+            el = document.getElementById('userAddPapQ3');
+            if (selQ3 && el) setSelectValue(selQ3, el.value);
+            el = document.getElementById('userAddPapQ4');
+            if (selQ4 && el) setSelectValue(selQ4, el.value);
+            el = document.getElementById('userAddPapRemarks');
+            if (inpRem && el) inpRem.value = el.value;
+
+            syncPapEllipsisTooltips(tr);
+        }
+
+        if (HAS_TABLE && searchInput) {
+            searchInput.addEventListener('input', function () {
+                var q = searchInput.value.trim().toLowerCase();
+                var rows = table.querySelectorAll('tbody tr');
+                rows.forEach(function (tr) {
+                    var emptyMsg = tr.querySelector('td[colspan]');
+                    if (emptyMsg) {
+                        tr.style.display = '';
+                        return;
+                    }
+                    var text = tr.textContent.toLowerCase();
+                    tr.style.display = !q || text.indexOf(q) !== -1 ? '' : 'none';
+                });
+            });
+        }
+
+        function closeAddModalAfterEditAction() {
+            userReportEditRow = null;
+            if (addTitleEl) addTitleEl.textContent = 'Add Program';
+            setAddProgramModalFooterMode(false);
+            addModal.hide();
+        }
+
+        function setEditRowWorkflow(status) {
+            if (!userReportEditRow) return;
+            userReportEditRow.setAttribute('data-pap-workflow', status);
+        }
+
+        if (addBtn) {
+            addBtn.addEventListener('click', function () {
+                userReportEditRow = null;
+                setAddProgramModalFooterMode(false);
+                resetUserAddPapForm();
+                if (addTitleEl) addTitleEl.textContent = 'Add Program';
+                addModal.show();
+            });
+        }
+
+        if (HAS_TABLE && table) {
+            table.querySelectorAll('[data-pap-edit-trigger]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    userReportEditRow = btn.closest('tr');
+                    if (!userReportEditRow) return;
+                    setAddProgramModalFooterMode(true);
+                    resetUserAddPapForm();
+                    fillAddModalFromRow(userReportEditRow);
+                    if (addTitleEl) addTitleEl.textContent = 'Edit program';
+                    addModal.show();
+                });
+            });
+        }
+
+        if (addSaveBtn) {
+            addSaveBtn.addEventListener('click', function () {
+                if (userReportEditRow && table) applyAddModalToRow(userReportEditRow);
+                userReportEditRow = null;
+                if (addTitleEl) addTitleEl.textContent = 'Add Program';
+                setAddProgramModalFooterMode(false);
+                addModal.hide();
+            });
+        }
+
+        if (editDraftBtn) {
+            editDraftBtn.addEventListener('click', function () {
+                if (userReportEditRow && table) {
+                    applyAddModalToRow(userReportEditRow);
+                    setEditRowWorkflow('draft');
+                }
+                closeAddModalAfterEditAction();
+            });
+        }
+
+        if (editEndorsedBtn) {
+            editEndorsedBtn.addEventListener('click', function () {
+                if (userReportEditRow && table) {
+                    applyAddModalToRow(userReportEditRow);
+                    setEditRowWorkflow('endorsed');
+                }
+                closeAddModalAfterEditAction();
+            });
+        }
+
+        if (editDroppedBtn) {
+            editDroppedBtn.addEventListener('click', function () {
+                if (userReportEditRow && userReportEditRow.parentNode) {
+                    userReportEditRow.remove();
+                }
+                closeAddModalAfterEditAction();
+            });
+        }
+
+        addModalEl.addEventListener('hidden.bs.modal', function () {
+            userReportEditRow = null;
+            if (addTitleEl) addTitleEl.textContent = 'Add Program';
+            setAddProgramModalFooterMode(false);
+        });
+    })();
+</script>

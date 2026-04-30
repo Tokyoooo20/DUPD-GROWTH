@@ -1,0 +1,116 @@
+@using DupdGrowth.Web.Models
+@{
+    var monthNames = new[]
+    {
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    };
+}
+@* Mini table for alignment + status; time = month-only dropdowns; remarks below for space. *@
+<form id="papEditModalForm" class="pap-edit-modal-form">
+    <p class="pap-edit-modal-hint small text-body-secondary mb-2 mb-sm-3">
+        Time frame uses <strong>month only</strong> (January–December). Saved values use the report year from the top bar (e.g. Jan 2026).
+    </p>
+    <div class="table-responsive pap-edit-mini-wrap">
+        <table class="table table-bordered table-sm mb-0 pap-edit-mini-table">
+            <thead>
+                <tr>
+                    <th colspan="2" scope="colgroup" class="pap-edit-mini-thead">Time Frame</th>
+                    <th colspan="2" scope="colgroup" class="pap-edit-mini-thead">Alignment</th>
+                    <th colspan="4" scope="colgroup" class="pap-edit-mini-thead">Status</th>
+                </tr>
+                <tr>
+                    <th scope="col" class="pap-edit-mini-thead">Start</th>
+                    <th scope="col" class="pap-edit-mini-thead">End</th>
+                    <th scope="col" class="pap-edit-mini-thead">GROWTH</th>
+                    <th scope="col" class="pap-edit-mini-thead">ACHIEVE</th>
+                    <th scope="col" class="pap-edit-mini-thead">1st quarter</th>
+                    <th scope="col" class="pap-edit-mini-thead">2nd quarter</th>
+                    <th scope="col" class="pap-edit-mini-thead">3rd quarter</th>
+                    <th scope="col" class="pap-edit-mini-thead">4th quarter</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <select id="papEditModalTimeStart" class="form-select form-select-sm pap-edit-mini-select pap-edit-mini-select--month" aria-label="Time frame start (month)">
+                            <option value="">—</option>
+                            @for (var m = 1; m <= 12; m++)
+                            {
+                                <option value="@m">@monthNames[m - 1]</option>
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        <select id="papEditModalTimeEnd" class="form-select form-select-sm pap-edit-mini-select pap-edit-mini-select--month" aria-label="Time frame end (month)">
+                            <option value="">—</option>
+                            @for (var m = 1; m <= 12; m++)
+                            {
+                                <option value="@m">@monthNames[m - 1]</option>
+                            }
+                        </select>
+                    </td>
+                    <td class="pap-edit-mini-cell--grow">
+                        <select id="papEditModalGrowth" class="form-select form-select-sm pap-edit-mini-select" aria-label="GROWTH alignment">
+                            @foreach (var o in DashboardPapSelectOptions.Growth)
+                            {
+                                <option value="@o">@o</option>
+                            }
+                        </select>
+                    </td>
+                    <td class="pap-edit-mini-cell--achieve">
+                        <select id="papEditModalAchieve" class="form-select form-select-sm pap-edit-mini-select" aria-label="ACHIEVE alignment">
+                            @foreach (var o in DashboardPapSelectOptions.Achieve)
+                            {
+                                <option value="@o">@o</option>
+                            }
+                        </select>
+                    </td>
+                    <td class="pap-edit-mini-cell--q">
+                        <select id="papEditModalQ1" class="form-select form-select-sm pap-edit-mini-select" aria-label="1st quarter status">
+                            @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                            {
+                                <option value="@o">@o</option>
+                            }
+                        </select>
+                    </td>
+                    <td class="pap-edit-mini-cell--q">
+                        <select id="papEditModalQ2" class="form-select form-select-sm pap-edit-mini-select" aria-label="2nd quarter status">
+                            @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                            {
+                                <option value="@o">@o</option>
+                            }
+                        </select>
+                    </td>
+                    <td class="pap-edit-mini-cell--q">
+                        <select id="papEditModalQ3" class="form-select form-select-sm pap-edit-mini-select" aria-label="3rd quarter status">
+                            @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                            {
+                                <option value="@o">@o</option>
+                            }
+                        </select>
+                    </td>
+                    <td class="pap-edit-mini-cell--q">
+                        <select id="papEditModalQ4" class="form-select form-select-sm pap-edit-mini-select" aria-label="4th quarter status">
+                            @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                            {
+                                <option value="@o">@o</option>
+                            }
+                        </select>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pap-edit-modal-remarks-block mt-3 mt-sm-4">
+        <label for="papEditModalRemarks" class="form-label fw-semibold mb-2">Remarks</label>
+        <textarea id="papEditModalRemarks"
+                  class="form-control pap-edit-modal-remarks-textarea"
+                  rows="6"
+                  spellcheck="true"
+                  autocomplete="off"
+                  placeholder="Enter remarks…"
+                  aria-label="Remarks"></textarea>
+    </div>
+</form>

@@ -1,0 +1,43 @@
+@{
+    var showYear = ViewData["NavbarShowYear"] as bool? == true;
+    var selectedYear = ViewData["NavbarSelectedYear"] as int? ?? 2026;
+    var years = ViewData["NavbarYears"] as IEnumerable<int> ?? new[] { 2026, 2025, 2024, 2023 };
+    var segment = ViewData["NavbarSegment"] as string;
+    var page = ViewData["NavbarPage"] as int?;
+    var yearDetailAction = ViewData["NavbarYearDetailAction"] as string ?? "DashboardDetail";
+}
+<nav class="navbar navbar-expand-lg bg-white border-bottom flex-shrink-0 app-topbar">
+    <div class="container-fluid">
+        @if (showYear)
+        {
+            <div class="dropdown ms-auto" id="navbarYearDropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="navbarYearButton">
+                    Year: @selectedYear
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarYearButton">
+                    @foreach (var y in years)
+                    {
+                        <li>
+                            @if (string.IsNullOrEmpty(segment))
+                            {
+                                <a class="dropdown-item @(y == selectedYear ? "active" : null)"
+                                   asp-controller="Dashboard"
+                                   asp-action="Dashboard"
+                                   asp-route-year="@y">@y</a>
+                            }
+                            else
+                            {
+                                <a class="dropdown-item @(y == selectedYear ? "active" : null)"
+                                   asp-controller="Dashboard"
+                                   asp-action="@yearDetailAction"
+                                   asp-route-segment="@segment"
+                                   asp-route-page="@(page ?? 1)"
+                                   asp-route-year="@y">@y</a>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+</nav>

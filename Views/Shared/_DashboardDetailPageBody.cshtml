@@ -1,0 +1,353 @@
+@model DupdGrowth.Web.Models.DashboardDetailViewModel
+@{
+    ViewData["Title"] = ViewData["Title"] as string ?? "PAP list";
+    ViewData["SidebarActive"] = ViewData["SidebarActive"] as string ?? "dashboard";
+    ViewData["SidebarUserName"] = ViewData["SidebarUserName"] as string ?? "Sample User";
+    ViewData["NavbarShowYear"] = ViewData["NavbarShowYear"] as bool? ?? true;
+
+    var papListAction = ViewData["PapListAction"] as string ?? "DashboardDetail";
+    var papListController = ViewData["PapListController"] as string ?? "Dashboard";
+    var dashboardShellMode = ViewData["DashboardShellMode"] as string ?? "admin";
+    var detailBackController = ViewData["DetailBackController"] as string ?? "Dashboard";
+    var detailBackAction = ViewData["DetailBackAction"] as string ?? "Dashboard";
+    var detailBackIncludeYear = ViewData["DetailBackIncludeYear"] as bool? ?? true;
+    var detailBackUrl = detailBackIncludeYear
+        ? Url.Action(detailBackAction, detailBackController, new { year = Model.SelectedYear })!
+        : Url.Action(detailBackAction, detailBackController)!;
+
+    bool IsActive(string segment) =>
+        Model.Kpi.ActiveSegment is not null &&
+        string.Equals(Model.Kpi.ActiveSegment, segment, StringComparison.OrdinalIgnoreCase);
+
+    var showBackLink = ViewData["DashboardDetailShowBackLink"] as bool? ?? true;
+    var showKpiStrip = ViewData["DashboardDetailShowKpiStrip"] as bool? ?? true;
+    var showGrowthFilter = ViewData["DashboardDetailShowGrowthFilter"] as bool? ?? true;
+    var mainHeading = ViewData["DashboardDetailMainHeading"] as string;
+    var showTableToolbar = ViewData["DashboardDetailShowTableToolbar"] as bool? ?? false;
+    var showPriorityNoColumn = ViewData["DashboardDetailShowPriorityNoColumn"] as bool? ?? showTableToolbar;
+    var hidePapEditModal = ViewData["DashboardDetailHidePapEditModal"] as bool? ?? false;
+    var showRowDelete = ViewData["DashboardDetailShowRowDelete"] as bool? ?? false;
+    var showRowEdit = ViewData["DashboardDetailShowRowEdit"] as bool? ?? true;
+    var sidebarPartialName = string.Equals(dashboardShellMode, "user", StringComparison.OrdinalIgnoreCase)
+        ? "_SidebarUser"
+        : "_Sidebar";
+}
+<div class="app-shell d-flex">
+    <div class="dashboard-sidebar-shell flex-shrink-0" id="dashboardDetailSidebarShell">
+        <button type="button"
+                id="dashboardSidebarToggle"
+                class="dashboard-sidebar-toggle btn btn-sm position-absolute top-0 end-0 mt-2 me-2 z-3 rounded-2"
+                aria-expanded="true"
+                aria-controls="dashboardDetailSidebarShell"
+                title="Collapse sidebar">
+            <i class="bi bi-layout-sidebar-inset-reverse dashboard-sidebar-toggle-icon" aria-hidden="true"></i>
+            <span class="visually-hidden">Toggle sidebar width</span>
+        </button>
+        @await Html.PartialAsync(sidebarPartialName)
+    </div>
+    <div class="app-content d-flex flex-column flex-grow-1 min-w-0">
+        @await Html.PartialAsync("Navbar")
+        <main role="main" class="app-main flex-grow-1 bg-light">
+            <div class="container-fluid dashboard-page dashboard-page--tight px-3 px-sm-4 px-lg-5 pb-4 pb-lg-4">
+                @if (showBackLink)
+                {
+                    <header class="dashboard-page-header mb-2 mb-lg-3">
+                        <nav aria-label="Back to dashboard">
+                            <a class="text-decoration-none dashboard-detail-back" href="@detailBackUrl">
+                                <i class="bi bi-arrow-left dashboard-detail-back__icon" aria-hidden="true"></i>
+                                <span class="dashboard-detail-back__label">Back to dashboard</span>
+                            </a>
+                        </nav>
+                    </header>
+                }
+
+                @if (showKpiStrip)
+                {
+                <div class="row g-3 g-lg-4 mb-3 mb-lg-4">
+                    <div class="col-6 col-xl-3">
+                        <a class="kpi-link h-100 d-block @(IsActive(DashboardSegments.Total) ? "kpi-link--active" : null)"
+                           asp-controller="@papListController"
+                           asp-action="@papListAction"
+                           asp-route-segment="@DashboardSegments.Total"
+                           asp-route-year="@Model.SelectedYear"
+                           asp-route-growth="@Model.GrowthFilter"
+                           aria-current="@(IsActive(DashboardSegments.Total) ? "page" : null)">
+                            <div class="h-100" data-kpi-total-paps data-value="@Model.Kpi.TotalPapsValue" data-label="Total PAPs"></div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-xl-3">
+                        <a class="kpi-link h-100 d-block @(IsActive(DashboardSegments.Completed) ? "kpi-link--active" : null)"
+                           asp-controller="@papListController"
+                           asp-action="@papListAction"
+                           asp-route-segment="@DashboardSegments.Completed"
+                           asp-route-year="@Model.SelectedYear"
+                           asp-route-growth="@Model.GrowthFilter"
+                           aria-current="@(IsActive(DashboardSegments.Completed) ? "page" : null)">
+                            <div class="dashboard-kpi-card h-100">
+                                <div class="dashboard-kpi-card__icon dashboard-kpi-card__icon--completed" aria-hidden="true">
+                                    <i class="bi bi-patch-check-fill"></i>
+                                </div>
+                                <div class="dashboard-kpi-card__content">
+                                    <span class="dashboard-kpi-card__label">Completed</span>
+                                    <span class="dashboard-kpi-card__value">@Model.Kpi.CompletedPercent</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-xl-3">
+                        <a class="kpi-link h-100 d-block @(IsActive(DashboardSegments.Ongoing) ? "kpi-link--active" : null)"
+                           asp-controller="@papListController"
+                           asp-action="@papListAction"
+                           asp-route-segment="@DashboardSegments.Ongoing"
+                           asp-route-year="@Model.SelectedYear"
+                           asp-route-growth="@Model.GrowthFilter"
+                           aria-current="@(IsActive(DashboardSegments.Ongoing) ? "page" : null)">
+                            <div class="dashboard-kpi-card h-100">
+                                <div class="dashboard-kpi-card__icon dashboard-kpi-card__icon--ongoing" aria-hidden="true">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </div>
+                                <div class="dashboard-kpi-card__content">
+                                    <span class="dashboard-kpi-card__label">Ongoing</span>
+                                    <span class="dashboard-kpi-card__value">@Model.Kpi.OngoingPercent</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-xl-3">
+                        <a class="kpi-link h-100 d-block @(IsActive(DashboardSegments.NotStarted) ? "kpi-link--active" : null)"
+                           asp-controller="@papListController"
+                           asp-action="@papListAction"
+                           asp-route-segment="@DashboardSegments.NotStarted"
+                           asp-route-year="@Model.SelectedYear"
+                           asp-route-growth="@Model.GrowthFilter"
+                           aria-current="@(IsActive(DashboardSegments.NotStarted) ? "page" : null)">
+                            <div class="dashboard-kpi-card h-100">
+                                <div class="dashboard-kpi-card__icon dashboard-kpi-card__icon--not-started" aria-hidden="true">
+                                    <i class="bi bi-dash-circle"></i>
+                                </div>
+                                <div class="dashboard-kpi-card__content">
+                                    <span class="dashboard-kpi-card__label">Not started</span>
+                                    <span class="dashboard-kpi-card__value">@Model.Kpi.NotStartedPercent</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(mainHeading))
+                {
+                    <header class="dashboard-page-header mb-2 mb-lg-3">
+                        <h1 class="dashboard-page-title">@mainHeading</h1>
+                    </header>
+                }
+
+                <div id="papTableCard" class="pap-table-card-wrap">
+                    <div class="dashboard-card__body p-0">
+                        @if (showGrowthFilter)
+                        {
+                            <form method="get"
+                                  asp-controller="@papListController"
+                                  asp-action="@papListAction"
+                                  asp-route-segment="@Model.Kpi.ActiveSegment"
+                                  class="dashboard-growth-filter px-3 py-3 border-bottom bg-white">
+                                <input type="hidden" name="year" value="@Model.SelectedYear" />
+                                <div class="row g-2 align-items-end align-items-sm-center">
+                                    <div class="col-12 col-sm-auto">
+                                        <label for="papGrowthFilter" class="form-label small fw-semibold text-body-secondary mb-1 mb-sm-0">GROWTH</label>
+                                    </div>
+                                    <div class="col-12 col-sm-6 col-lg-5 col-xl-4">
+                                        <select name="growth"
+                                                id="papGrowthFilter"
+                                                class="form-select form-select-sm"
+                                                aria-label="Filter rows by GROWTH alignment"
+                                                onchange="this.form.submit()">
+                                            <option value="" selected="@(Model.GrowthFilter == null)">All</option>
+                                            @foreach (var g in DashboardPapSelectOptions.Growth)
+                                            {
+                                                <option value="@g" selected="@(Model.GrowthFilter == g)">@g</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </form>
+                        }
+                        @if (showTableToolbar)
+                        {
+                            @await Html.PartialAsync("_UserReportTableToolbar")
+                        }
+                        <div class="table-responsive">
+                            <table id="papDetailTable" class="table table-bordered dashboard-pap-table align-middle mb-0 @(showPriorityNoColumn ? "dashboard-pap-table--priority-col" : null)" data-editing="false" data-report-year="@Model.SelectedYear">
+                                <thead>
+                                    <tr>
+                                        @if (showPriorityNoColumn)
+                                        {
+                                            <th scope="col" rowspan="2" class="dashboard-pap-thead">Priority No.</th>
+                                        }
+                                        <th scope="col" rowspan="2" class="dashboard-pap-thead">Programs/Activities/Projects (PAPs)</th>
+                                        <th scope="col" rowspan="2" class="dashboard-pap-thead">Responsible Person</th>
+                                        <th scope="col" rowspan="2" class="dashboard-pap-thead">Budget Allocation</th>
+                                        <th scope="colgroup" colspan="2" class="dashboard-pap-thead">Time Frame</th>
+                                        <th scope="col" rowspan="2" class="dashboard-pap-thead">Support Offices/Units</th>
+                                        <th scope="colgroup" colspan="2" class="dashboard-pap-thead">Alignment</th>
+                                        <th scope="col" rowspan="2" class="dashboard-pap-thead">Remarks (Continuing, New, etc.)</th>
+                                        <th scope="colgroup" colspan="4" class="dashboard-pap-thead">Status</th>
+                                        <th scope="col" rowspan="2" class="dashboard-pap-thead">Remarks</th>
+                                        <th scope="col" rowspan="2" class="dashboard-pap-thead dashboard-pap-thead--actions">Actions</th>
+                                    </tr>
+                                    <tr>
+                                        <th scope="col" class="dashboard-pap-thead">Start</th>
+                                        <th scope="col" class="dashboard-pap-thead">End</th>
+                                        <th scope="col" class="dashboard-pap-thead">GROWTH</th>
+                                        <th scope="col" class="dashboard-pap-thead">ACHIEVE</th>
+                                        <th scope="col" class="dashboard-pap-thead">1st quarter</th>
+                                        <th scope="col" class="dashboard-pap-thead">2nd quarter</th>
+                                        <th scope="col" class="dashboard-pap-thead">3rd quarter</th>
+                                        <th scope="col" class="dashboard-pap-thead">4th quarter</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Rows.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="@(showPriorityNoColumn ? 16 : 15)" class="text-center text-body-secondary py-4">@(Model.GrowthFilter is not null ? "No PAPs match this GROWTH filter." : "No rows to display.")</td>
+                                        </tr>
+                                    }
+                                    @{
+                                        var priorityBase = (Model.Page - 1) * Model.PageSize;
+                                        var priorityIndex = 0;
+                                    }
+                                    @foreach (var row in Model.Rows)
+                                    {
+                                        priorityIndex++;
+                                        <tr>
+                                            @if (showPriorityNoColumn)
+                                            {
+                                                <td class="dashboard-pap-col-priority text-center text-body-secondary small" aria-label="Priority number">@(priorityBase + priorityIndex)</td>
+                                            }
+                                            <td class="dashboard-pap-col-pap dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--pap"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.Name" title="@row.Name" readonly autocomplete="off" aria-label="PAP name" /></td>
+                                            <td class="dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--md"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.ResponsiblePerson" title="@row.ResponsiblePerson" readonly autocomplete="off" aria-label="Responsible person" /></td>
+                                            <td><input type="text" class="form-control form-control-sm dashboard-pap-text-input" value="@row.BudgetAllocation" readonly autocomplete="off" aria-label="Budget allocation" /></td>
+                                            <td><input type="text" class="form-control form-control-sm dashboard-pap-text-input" value="@row.TimeFrameStart" readonly autocomplete="off" aria-label="Time frame start" /></td>
+                                            <td><input type="text" class="form-control form-control-sm dashboard-pap-text-input" value="@row.TimeFrameEnd" readonly autocomplete="off" aria-label="Time frame end" /></td>
+                                            <td class="dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--md"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.SupportOfficesUnits" title="@row.SupportOfficesUnits" readonly autocomplete="off" aria-label="Support offices or units" /></td>
+                                            <td class="dashboard-pap-select-cell">
+                                                @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.Growth, row.AlignmentGrowth, "dashboard-pap-select--growth", "GROWTH alignment"))
+                                            </td>
+                                            <td class="dashboard-pap-select-cell dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--achieve">
+                                                @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.Achieve, row.AlignmentAchieve, "dashboard-pap-select--achieve dashboard-pap-select--ellipsis", "ACHIEVE alignment"))
+                                            </td>
+                                            <td class="dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--remarks"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.RemarksContinuingNew" title="@row.RemarksContinuingNew" readonly autocomplete="off" aria-label="Remarks continuing or new" /></td>
+                                            <td class="dashboard-pap-select-cell">
+                                                @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.QuarterStatuses, row.StatusQ1, "dashboard-pap-select--quarter", "1st quarter status"))
+                                            </td>
+                                            <td class="dashboard-pap-select-cell">
+                                                @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.QuarterStatuses, row.StatusQ2, "dashboard-pap-select--quarter", "2nd quarter status"))
+                                            </td>
+                                            <td class="dashboard-pap-select-cell">
+                                                @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.QuarterStatuses, row.StatusQ3, "dashboard-pap-select--quarter", "3rd quarter status"))
+                                            </td>
+                                            <td class="dashboard-pap-select-cell">
+                                                @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.QuarterStatuses, row.StatusQ4, "dashboard-pap-select--quarter", "4th quarter status"))
+                                            </td>
+                                            <td class="dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--remarks"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.Remarks" title="@row.Remarks" readonly autocomplete="off" aria-label="Remarks" /></td>
+                                            <td class="dashboard-pap-col-actions">
+                                                @if (showRowEdit || showRowDelete)
+                                                {
+                                                    <div class="d-inline-flex align-items-center gap-1" role="group" aria-label="Row actions">
+                                                        @if (showRowEdit)
+                                                        {
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-secondary dashboard-pap-btn-edit"
+                                                                    data-pap-edit-trigger
+                                                                    aria-label="Edit">
+                                                                <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                                            </button>
+                                                        }
+                                                        @if (showRowDelete)
+                                                        {
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-danger"
+                                                                    data-pap-drop-trigger
+                                                                    aria-label="Drop project">
+                                                                <i class="bi bi-trash3" aria-hidden="true"></i>
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        @if (Model.TotalPages > 1)
+                        {
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-3 border-top bg-white">
+                                <nav aria-label="PAP list pagination">
+                                    <ul class="pagination pagination-sm mb-0">
+                                        <li class="page-item @(Model.Page <= 1 ? "disabled" : null)">
+                                            <a class="page-link d-inline-flex align-items-center justify-content-center dashboard-pap-pagination-arrow"
+                                               asp-controller="@papListController"
+                                               asp-action="@papListAction"
+                                               asp-route-segment="@Model.Kpi.ActiveSegment"
+                                               asp-route-page="@(Model.Page - 1)"
+                                               asp-route-year="@Model.SelectedYear"
+                                               asp-route-growth="@Model.GrowthFilter"
+                                               aria-label="Previous page">
+                                                <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                                            </a>
+                                        </li>
+                                        @for (var p = 1; p <= Model.TotalPages; p++)
+                                        {
+                                            <li class="page-item @(p == Model.Page ? "active" : null)">
+                                                <a class="page-link"
+                                                   asp-controller="@papListController"
+                                                   asp-action="@papListAction"
+                                                   asp-route-segment="@Model.Kpi.ActiveSegment"
+                                                   asp-route-page="@p"
+                                                   asp-route-year="@Model.SelectedYear"
+                                                   asp-route-growth="@Model.GrowthFilter">@p</a>
+                                            </li>
+                                        }
+                                        <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : null)">
+                                            <a class="page-link d-inline-flex align-items-center justify-content-center dashboard-pap-pagination-arrow"
+                                               asp-controller="@papListController"
+                                               asp-action="@papListAction"
+                                               asp-route-segment="@Model.Kpi.ActiveSegment"
+                                               asp-route-page="@(Model.Page + 1)"
+                                               asp-route-year="@Model.SelectedYear"
+                                               asp-route-growth="@Model.GrowthFilter"
+                                               aria-label="Next page">
+                                                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+@* Outside .app-shell so Bootstrap fixed modal centers on the viewport (overflow on shell was offsetting client Reports). *@
+@if (!hidePapEditModal)
+{
+    ViewData["ModalId"] = "papEditModal";
+    ViewData["ModalTitle"] = "Edit row";
+    ViewData["ModalSize"] = "modal-xl";
+    ViewData["ModalScrollable"] = true;
+    ViewData["ModalCentered"] = true;
+    ViewData["ModalBody"] = null;
+    ViewData["ModalBodyPartial"] = "_PapRowEditModalBody";
+    ViewData["ModalPrimaryText"] = "Save";
+    ViewData["ModalSecondaryText"] = "Cancel";
+    ViewData["ModalPrimaryButtonId"] = "papEditModalSave";
+    ViewData["ModalPrimaryDismiss"] = false;
+}
+@if (!hidePapEditModal)
+{
+    @await Html.PartialAsync("Modal")
+}

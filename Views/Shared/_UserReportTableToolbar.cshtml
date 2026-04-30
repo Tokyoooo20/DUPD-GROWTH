@@ -1,0 +1,36 @@
+@* Toolbar above PAP table: optional search + Add (client). *@
+@{
+    var showSearch = ViewData["UserReportToolbarShowSearch"] as bool? ?? true;
+    var showAdd = ViewData["UserReportToolbarShowAdd"] as bool? ?? true;
+}
+@if (showSearch || showAdd)
+{
+    <div class="dashboard-pap-table-toolbar px-3 py-3 border-bottom bg-white d-flex flex-column flex-sm-row flex-wrap align-items-stretch align-items-sm-center justify-content-between gap-2">
+        @if (showSearch)
+        {
+            <div class="flex-grow-1" style="min-width: 12rem; max-width: 28rem;">
+                <label class="form-label visually-hidden" for="userPapTableSearch">Search table</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white" aria-hidden="true">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="search"
+                           class="form-control"
+                           id="userPapTableSearch"
+                           placeholder="Search PAPs, person, office…"
+                           autocomplete="off"
+                           aria-label="Search table rows" />
+                </div>
+            </div>
+        }
+        @if (showAdd)
+        {
+            <div class="d-flex gap-2 flex-shrink-0 @(showSearch ? "" : "ms-sm-auto")">
+                <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1" id="userPapTableAddBtn" aria-label="Add">
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                    <span>Add</span>
+                </button>
+            </div>
+        }
+    </div>
+}

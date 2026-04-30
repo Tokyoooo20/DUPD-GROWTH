@@ -1,0 +1,13 @@
+@* Collapsible rail + user sidebar (same IDs as dashboard detail pages for shared collapse script). *@
+<div class="dashboard-sidebar-shell flex-shrink-0" id="dashboardDetailSidebarShell">
+    <button type="button"
+            id="dashboardSidebarToggle"
+            class="dashboard-sidebar-toggle btn btn-sm position-absolute top-0 end-0 mt-2 me-2 z-3 rounded-2"
+            aria-expanded="true"
+            aria-controls="dashboardDetailSidebarShell"
+            title="Collapse sidebar">
+        <i class="bi bi-layout-sidebar-inset-reverse dashboard-sidebar-toggle-icon" aria-hidden="true"></i>
+        <span class="visually-hidden">Toggle sidebar width</span>
+    </button>
+    @await Html.PartialAsync("_SidebarUser")
+</div>

@@ -1,0 +1,77 @@
+@* Client PAP list / project: same behavior as DashboardDetail via shared partial; customize this file for user-only layout or scripts. *@
+@model DupdGrowth.Web.Models.DashboardDetailViewModel
+@{
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+    ViewData["DashboardDetailShowBackLink"] = false;
+    ViewData["DashboardDetailShowKpiStrip"] = false;
+    ViewData["DashboardDetailShowGrowthFilter"] = false;
+    ViewData["DashboardDetailMainHeading"] = "Project";
+    ViewData["DashboardDetailShowTableToolbar"] = true;
+    ViewData["DashboardDetailHidePapEditModal"] = true;
+    ViewData["DashboardDetailShowRowDelete"] = true;
+    ViewData["UserReportToolbarShowAdd"] = false;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/User/UserProject.css" asp-append-version="true" />
+}
+@await Html.PartialAsync("_DashboardDetailPageBody", Model)
+@await Html.PartialAsync("_UserReportAddProgramPanel")
+@{
+    var userProjectDropModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "userProjectDropConfirmModal",
+        ["ModalTitle"] = "Drop this project?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to drop this project?</p>",
+        ["ModalPrimaryText"] = "Drop",
+        ["ModalPrimaryButtonId"] = "userProjectDropConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Cancel",
+    };
+}
+@await Html.PartialAsync("Modal", null, userProjectDropModal)
+@section Scripts {
+    <script src="~/js/dashboard-charts.js" asp-append-version="true"></script>
+    @await Html.PartialAsync("_DashboardPapDetailPageScripts")
+    @{
+        ViewData["UserReportAddProgramHasTable"] = true;
+    }
+    @await Html.PartialAsync("_UserReportAddProgramPanelScripts")
+    <script>
+        (function () {
+            if (typeof bootstrap === 'undefined') return;
+            var table = document.getElementById('papDetailTable');
+            var dropModalEl = document.getElementById('userProjectDropConfirmModal');
+            if (!table || !dropModalEl) return;
+
+            var dropModal = bootstrap.Modal.getOrCreateInstance(dropModalEl);
+            var dropConfirmBtn = document.getElementById('userProjectDropConfirmBtn');
+            var pendingDropRow = null;
+
+            table.addEventListener('click', function (e) {
+                var btn = e.target.closest('[data-pap-drop-trigger]');
+                if (!btn || !table.contains(btn)) return;
+                e.preventDefault();
+                var tr = btn.closest('tr');
+                if (!tr || tr.querySelector('td[colspan]')) return;
+                pendingDropRow = tr;
+                dropModal.show();
+            });
+
+            if (dropConfirmBtn) {
+                dropConfirmBtn.addEventListener('click', function () {
+                    if (pendingDropRow && pendingDropRow.parentNode) {
+                        pendingDropRow.remove();
+                    }
+                    pendingDropRow = null;
+                    var inst = bootstrap.Modal.getInstance(dropModalEl);
+                    if (inst) inst.hide();
+                });
+            }
+
+            dropModalEl.addEventListener('hidden.bs.modal', function () {
+                pendingDropRow = null;
+            });
+        })();
+    </script>
+}

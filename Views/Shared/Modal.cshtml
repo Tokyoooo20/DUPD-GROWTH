@@ -1,0 +1,117 @@
+@*
+    Reusable Bootstrap 5 modal. Set ViewData before @await Html.PartialAsync("Modal"):
+
+    ViewData["ModalId"]              — string, default "reusableModal"
+    ViewData["ModalTitle"]           — string, default "Modal"
+    ViewData["ModalSize"]            — string extra class on .modal-dialog: "modal-sm" | "modal-lg" | "modal-xl" | "modal-fullscreen" | ""
+    ViewData["ModalCentered"]        — bool, default true
+    ViewData["ModalScrollable"]      — bool, default false (adds modal-dialog-scrollable)
+    ViewData["ModalBody"]            — string (HTML) for .modal-body
+    ViewData["ModalBodyPartial"]     — optional partial name (e.g. "_MyBody"); used when ModalBody is null/empty
+    ViewData["ModalShowFooter"]      — bool, default true
+    ViewData["ModalShowPrimaryButton"] — bool, default true (Save action)
+    ViewData["ModalPrimaryText"]     — string, default "Save changes"
+    ViewData["ModalSecondaryText"]   — string, default "Close"
+    ViewData["ModalPrimaryButtonId"] — optional string id for primary button (e.g. wire click handlers)
+    ViewData["ModalPrimaryUrl"]      — optional string URL: primary renders as <a class="btn btn-primary"> (e.g. logout)
+    ViewData["ModalPrimaryDismiss"]    — bool, default true (primary closes modal on click; ignored when ModalPrimaryUrl is set)
+    ViewData["ModalSecondaryDismiss"] — bool, default true (secondary uses data-bs-dismiss)
+
+    Open from a button: data-bs-toggle="modal" data-bs-target="#yourModalId"
+*@
+@{
+    var modalId = ViewData["ModalId"] as string ?? "reusableModal";
+    var title = ViewData["ModalTitle"] as string ?? "Modal";
+    var titleId = modalId + "Label";
+    var sizeClass = ViewData["ModalSize"] as string ?? "";
+    var centered = ViewData["ModalCentered"] as bool? ?? true;
+    var scrollable = ViewData["ModalScrollable"] as bool? ?? false;
+    var bodyHtml = ViewData["ModalBody"] as string;
+    var bodyPartial = ViewData["ModalBodyPartial"] as string;
+    var showFooter = ViewData["ModalShowFooter"] as bool? ?? true;
+    var showPrimary = ViewData["ModalShowPrimaryButton"] as bool? ?? true;
+    var primaryText = ViewData["ModalPrimaryText"] as string ?? "Save changes";
+    var secondaryText = ViewData["ModalSecondaryText"] as string ?? "Close";
+    var primaryBtnId = ViewData["ModalPrimaryButtonId"] as string;
+    var primaryUrl = ViewData["ModalPrimaryUrl"] as string;
+    var primaryDismiss = ViewData["ModalPrimaryDismiss"] as bool? ?? true;
+    var secondaryDismiss = ViewData["ModalSecondaryDismiss"] as bool? ?? true;
+
+    /* Bootstrap 5: modal-dialog-centered before modal-dialog-scrollable when both are used. */
+    var dialogClasses = "modal-dialog" + (string.IsNullOrEmpty(sizeClass) ? "" : " " + sizeClass);
+    if (centered) { dialogClasses += " modal-dialog-centered"; }
+    if (scrollable) { dialogClasses += " modal-dialog-scrollable"; }
+}
+<div class="modal fade" id="@modalId" tabindex="-1" aria-labelledby="@titleId" aria-hidden="true">
+    <div class="@dialogClasses">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="@titleId">@title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(bodyHtml))
+                {
+                    @Html.Raw(bodyHtml)
+                }
+                else if (!string.IsNullOrEmpty(bodyPartial))
+                {
+                    @await Html.PartialAsync(bodyPartial)
+                }
+                else
+                {
+                    <p class="text-body-secondary mb-0">Set <code>ViewData["ModalBody"]</code> or <code>ViewData["ModalBodyPartial"]</code> when including this partial.</p>
+                }
+            </div>
+            @if (showFooter)
+            {
+                <div class="modal-footer">
+                    @if (secondaryDismiss)
+                    {
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@secondaryText</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-outline-secondary">@secondaryText</button>
+                    }
+                    @if (showPrimary)
+                    {
+                        if (!string.IsNullOrEmpty(primaryUrl))
+                        {
+                            if (string.IsNullOrEmpty(primaryBtnId))
+                            {
+                                <a href="@primaryUrl" class="btn btn-primary" role="button">@primaryText</a>
+                            }
+                            else
+                            {
+                                <a href="@primaryUrl" class="btn btn-primary" id="@primaryBtnId" role="button">@primaryText</a>
+                            }
+                        }
+                        else if (string.IsNullOrEmpty(primaryBtnId))
+                        {
+                            if (primaryDismiss)
+                            {
+                                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">@primaryText</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-primary">@primaryText</button>
+                            }
+                        }
+                        else
+                        {
+                            if (primaryDismiss)
+                            {
+                                <button type="button" class="btn btn-primary" id="@primaryBtnId" data-bs-dismiss="modal">@primaryText</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-primary" id="@primaryBtnId">@primaryText</button>
+                            }
+                        }
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

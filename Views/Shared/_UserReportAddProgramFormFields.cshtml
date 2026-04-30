@@ -1,0 +1,225 @@
+@using DupdGrowth.Web.Models
+@{
+    var monthShort = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    var showQuarterStatus = ViewData["UserReportAddProgramShowQuarterStatus"] as bool? ?? true;
+    var createNewLayout = ViewData["UserReportAddProgramCreateNewLayout"] as bool? ?? false;
+    var priCol = createNewLayout ? "col-12 col-md-6" : "col-12 col-md-4";
+    var papCol = createNewLayout ? "col-12 col-md-6" : "col-12 col-md-8";
+}
+<div class="d-flex flex-column gap-3">
+    <div class="row g-3 align-items-start">
+        <div class="@priCol">
+            <label for="userAddPapPriorityNo" class="form-label fw-semibold">Priority No.</label>
+            <input type="number"
+                   class="form-control"
+                   id="userAddPapPriorityNo"
+                   min="1"
+                   step="1"
+                   inputmode="numeric"
+                   placeholder="e.g. 1"
+                   aria-label="Priority number" />
+        </div>
+        <div class="@papCol">
+            <label for="userAddPapName" class="form-label fw-semibold">Programs/Activities/Projects (PAPs)</label>
+            <input type="text" class="form-control" id="userAddPapName" autocomplete="off" placeholder="Enter project name" />
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <label for="userAddPapResponsible" class="form-label fw-semibold">Responsible person</label>
+            <input type="text"
+                   class="form-control"
+                   id="userAddPapResponsible"
+                   autocomplete="name"
+                   placeholder="Enter responsible person"
+                   aria-label="Responsible person" />
+        </div>
+        <div class="col-12 col-md-6">
+            <label for="userAddPapBudget" class="form-label fw-semibold">Budget</label>
+            <div class="input-group">
+                <span class="input-group-text">₱</span>
+                <input type="number"
+                       class="form-control"
+                       id="userAddPapBudget"
+                       inputmode="decimal"
+                       min="0"
+                       step="0.01"
+                       placeholder="0"
+                       aria-label="Budget amount" />
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <span class="form-label fw-semibold d-block mb-2">Time Frame</span>
+        <div class="row g-3">
+            <div class="col-12 col-sm-6">
+                <label class="form-label small text-body-secondary mb-1" for="userAddPapTimeStart">Start</label>
+                <select id="userAddPapTimeStart" class="form-select" aria-label="Timeline start (month)">
+                    <option value="">—</option>
+                    @for (var m = 1; m <= 12; m++)
+                    {
+                        <option value="@m">@monthShort[m - 1]</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label class="form-label small text-body-secondary mb-1" for="userAddPapTimeEnd">End</label>
+                <select id="userAddPapTimeEnd" class="form-select" aria-label="Timeline end (month)">
+                    <option value="">—</option>
+                    @for (var m = 1; m <= 12; m++)
+                    {
+                        <option value="@m">@monthShort[m - 1]</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <label for="userAddPapOrg" class="form-label fw-semibold">Support Offices/Units</label>
+        <select class="form-select" id="userAddPapOrg" aria-label="Support offices or units">
+            <option value="">Select support office / unit</option>
+            <option value="VPAA">VPAA</option>
+            <option value="VPRIE">VPRIE</option>
+            <option value="VPFA">VPFA</option>
+            <option value="VPGASO">VPGASO</option>
+            <option value="Chancellor">Chancellor</option>
+        </select>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <label for="userAddPapGrowth" class="form-label fw-semibold">GROWTH</label>
+            <select id="userAddPapGrowth" class="form-select" aria-label="GROWTH alignment">
+                @foreach (var o in DashboardPapSelectOptions.Growth)
+                {
+                    <option value="@o">@o</option>
+                }
+            </select>
+        </div>
+        <div class="col-12 col-md-6">
+            <label for="userAddPapAchieve" class="form-label fw-semibold">ACHIEVE</label>
+            <select id="userAddPapAchieve" class="form-select" aria-label="ACHIEVE alignment">
+                @foreach (var o in DashboardPapSelectOptions.Achieve)
+                {
+                    <option value="@o">@o</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    @if (createNewLayout)
+    {
+        <div class="row g-3 align-items-start">
+            <div class="col-12 col-md-6">
+                <label for="userAddPapRemarksContinuingType" class="form-label fw-semibold">Remarks (Continuing, New, etc.)</label>
+                <select class="form-select" id="userAddPapRemarksContinuingType" aria-label="Remarks (Continuing, New, etc.)">
+                    <option value="">Select…</option>
+                    <option value="Continuing">Continuing</option>
+                    <option value="New">New</option>
+                    <option value="Terminated">Terminated</option>
+                    <option value="Others">Others</option>
+                </select>
+                <div id="userAddPapRemarksContinuingOtherWrap" class="mt-2 d-none">
+                    <label for="userAddPapRemarksContinuingOther" class="form-label small text-body-secondary">Specify (Others)</label>
+                    <input type="text"
+                           class="form-control"
+                           id="userAddPapRemarksContinuingOther"
+                           autocomplete="off"
+                           placeholder="Type details…"
+                           aria-label="Specify when Others is selected" />
+                </div>
+            </div>
+            <div class="col-12 col-md-6 d-flex flex-column">
+                <label for="userAddPapRemarks" class="form-label fw-semibold">Remarks</label>
+                <textarea id="userAddPapRemarks"
+                          class="form-control flex-grow-1"
+                          rows="6"
+                          spellcheck="true"
+                          autocomplete="off"
+                          placeholder="Enter remarks…"
+                          aria-label="Remarks"></textarea>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div>
+            <label for="userAddPapRemarksContinuingType" class="form-label fw-semibold">Remarks (Continuing, New, etc.)</label>
+            <select class="form-select" id="userAddPapRemarksContinuingType" aria-label="Remarks (Continuing, New, etc.)">
+                <option value="">Select…</option>
+                <option value="Continuing">Continuing</option>
+                <option value="New">New</option>
+                <option value="Terminated">Terminated</option>
+                <option value="Others">Others</option>
+            </select>
+            <div id="userAddPapRemarksContinuingOtherWrap" class="mt-2 d-none">
+                <label for="userAddPapRemarksContinuingOther" class="form-label small text-body-secondary">Specify (Others)</label>
+                <input type="text"
+                       class="form-control"
+                       id="userAddPapRemarksContinuingOther"
+                       autocomplete="off"
+                       placeholder="Type details…"
+                       aria-label="Specify when Others is selected" />
+            </div>
+        </div>
+
+        @if (showQuarterStatus)
+        {
+            <div>
+                <span class="form-label fw-semibold d-block mb-2">Status</span>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label small text-body-secondary mb-1" for="userAddPapQ1">1st quarter</label>
+                        <select id="userAddPapQ1" class="form-select" aria-label="1st quarter status">
+                            @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                            {
+                                <option value="@o">@o</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-body-secondary mb-1" for="userAddPapQ2">2nd quarter</label>
+                        <select id="userAddPapQ2" class="form-select" aria-label="2nd quarter status">
+                            @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                            {
+                                <option value="@o">@o</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-body-secondary mb-1" for="userAddPapQ3">3rd quarter</label>
+                        <select id="userAddPapQ3" class="form-select" aria-label="3rd quarter status">
+                            @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                            {
+                                <option value="@o">@o</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-body-secondary mb-1" for="userAddPapQ4">4th quarter</label>
+                        <select id="userAddPapQ4" class="form-select" aria-label="4th quarter status">
+                            @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                            {
+                                <option value="@o">@o</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div>
+            <label for="userAddPapRemarks" class="form-label fw-semibold">Remarks</label>
+            <textarea id="userAddPapRemarks"
+                      class="form-control"
+                      rows="5"
+                      spellcheck="true"
+                      autocomplete="off"
+                      placeholder="Enter remarks…"
+                      aria-label="Remarks"></textarea>
+        </div>
+    }
+</div>

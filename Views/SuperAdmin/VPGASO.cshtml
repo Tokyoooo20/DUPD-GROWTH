@@ -1,0 +1,31 @@
+@{
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+    ViewData["Title"] = "VPGASO";
+    ViewData["SidebarActive"] = "vpgaso";
+    ViewData["SidebarUserName"] = "Sample User";
+    ViewData["NavbarShowYear"] = true;
+    ViewData["ChartShowGrowthIndicator"] = false;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/SuperAdmin/superadmin-dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/dashboard-charts.css" asp-append-version="true" />
+}
+<div class="app-shell d-flex">
+    @await Html.PartialAsync("_Sidebar")
+    <div class="app-content d-flex flex-column flex-grow-1 min-w-0">
+        @await Html.PartialAsync("Navbar")
+        <main role="main" class="app-main flex-grow-1 bg-light">
+            <div class="container-fluid dashboard-page dashboard-page--tight px-3 px-sm-4 px-lg-5 pb-4 pb-lg-4">
+                <header class="dashboard-page-header mb-2 mb-lg-3">
+                    <h1 class="dashboard-page-title">VPGASO</h1>
+                </header>
+                @await Html.PartialAsync("Chart")
+            </div>
+        </main>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/lib/chart.js/dist/chart.umd.min.js" asp-append-version="true"></script>
+    <script src="~/lib/chartjs-plugin-datalabels/chartjs-plugin-datalabels.min.js" asp-append-version="true"></script>
+    <script src="~/js/dashboard-charts.js" asp-append-version="true"></script>
+}

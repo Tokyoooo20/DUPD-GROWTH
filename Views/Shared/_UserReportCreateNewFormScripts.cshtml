@@ -1,0 +1,192 @@
+@* Inline Create New page: remarks toggle + Save/Cancel with confirmation modals. *@
+<script>
+    (function () {
+        var root = document.getElementById('createNewPapForm');
+        if (!root || typeof bootstrap === 'undefined') return;
+
+        var addSaveBtn = document.getElementById('userReportAddProgramSave');
+        var cancelBtn = document.getElementById('createNewCancelBtn');
+        var saveModalEl = document.getElementById('createNewSaveEndorsedConfirmModal');
+        var cancelModalEl = document.getElementById('createNewCancelConfirmModal');
+        var saveConfirmBtn = document.getElementById('createNewSaveEndorsedConfirmBtn');
+        var cancelConfirmBtn = document.getElementById('createNewCancelConfirmBtn');
+
+        function syncRemarksContinuingNewUi() {
+            var typeSel = document.getElementById('userAddPapRemarksContinuingType');
+            var wrap = document.getElementById('userAddPapRemarksContinuingOtherWrap');
+            var oth = document.getElementById('userAddPapRemarksContinuingOther');
+            if (!typeSel || !wrap) return;
+            var show = typeSel.value === 'Others';
+            wrap.classList.toggle('d-none', !show);
+            if (oth) oth.disabled = !show;
+        }
+
+        function isUserAddPapFormComplete() {
+            function el(id) { return document.getElementById(id); }
+            var name = el('userAddPapName');
+            var resp = el('userAddPapResponsible');
+            var budget = el('userAddPapBudget');
+            var ts = el('userAddPapTimeStart');
+            var te = el('userAddPapTimeEnd');
+            var org = el('userAddPapOrg');
+            if (!name || !resp || !budget || !ts || !te || !org) return false;
+            if (!String(name.value || '').trim()) return false;
+            if (!String(resp.value || '').trim()) return false;
+            var b = String(budget.value || '').trim();
+            if (b === '' || isNaN(parseFloat(b))) return false;
+            if (parseFloat(b) < 0) return false;
+            if (!String(ts.value || '').trim()) return false;
+            if (!String(te.value || '').trim()) return false;
+            if (!String(org.value || '').trim()) return false;
+            var pr = el('userAddPapPriorityNo');
+            if (!pr) return false;
+            var pv = String(pr.value || '').trim();
+            if (pv === '') return false;
+            var pn = parseInt(pv, 10);
+            if (isNaN(pn) || pn < 1) return false;
+            var rType = el('userAddPapRemarksContinuingType');
+            if (!rType || !String(rType.value || '').trim()) return false;
+            if (rType.value === 'Others') {
+                var rO = el('userAddPapRemarksContinuingOther');
+                if (!rO || !String(rO.value || '').trim()) return false;
+            }
+            return true;
+        }
+
+        function updateAddProgramSaveButtonLabel() {
+            if (!addSaveBtn) return;
+            addSaveBtn.textContent = isUserAddPapFormComplete() ? 'Save' : 'Save as Endorsed';
+        }
+
+        function resetCreateNewForm() {
+            ['userAddPapPriorityNo', 'userAddPapName', 'userAddPapResponsible', 'userAddPapBudget', 'userAddPapRemarksContinuingOther', 'userAddPapRemarks'].forEach(function (id) {
+                var elx = document.getElementById(id);
+                if (elx) elx.value = '';
+            });
+            ['userAddPapRemarksContinuingType', 'userAddPapOrg', 'userAddPapTimeStart', 'userAddPapTimeEnd', 'userAddPapGrowth', 'userAddPapAchieve'].forEach(function (id) {
+                var sel = document.getElementById(id);
+                if (sel) sel.selectedIndex = 0;
+            });
+            syncRemarksContinuingNewUi();
+            updateAddProgramSaveButtonLabel();
+        }
+
+        root.addEventListener('input', updateAddProgramSaveButtonLabel);
+        root.addEventListener('change', function (e) {
+            if (e.target && e.target.id === 'userAddPapRemarksContinuingType') {
+                var o = document.getElementById('userAddPapRemarksContinuingOther');
+                if (e.target.value !== 'Others' && o) o.value = '';
+                syncRemarksContinuingNewUi();
+            }
+            updateAddProgramSaveButtonLabel();
+        });
+
+        syncRemarksContinuingNewUi();
+        updateAddProgramSaveButtonLabel();
+
+        var saveModal = saveModalEl ? bootstrap.Modal.getOrCreateInstance(saveModalEl) : null;
+        var cancelModal = cancelModalEl ? bootstrap.Modal.getOrCreateInstance(cancelModalEl) : null;
+
+        if (addSaveBtn && saveModal) {
+            addSaveBtn.addEventListener('click', function () {
+                saveModal.show();
+            });
+        }
+
+        if (saveConfirmBtn && saveModalEl) {
+            saveConfirmBtn.addEventListener('click', function () {
+                var inst = bootstrap.Modal.getInstance(saveModalEl);
+                if (inst) inst.hide();
+
+                var payload = {
+                    priorityNo: parseInt(document.getElementById('userAddPapPriorityNo').value, 10),
+                    papName: document.getElementById('userAddPapName').value.trim(),
+                    responsiblePerson: document.getElementById('userAddPapResponsible').value.trim(),
+                    budget: parseFloat(document.getElementById('userAddPapBudget').value),
+                    timeFrameStart: parseInt(document.getElementById('userAddPapTimeStart').value, 10),
+                    timeFrameEnd: parseInt(document.getElementById('userAddPapTimeEnd').value, 10),
+                    supportOffice: document.getElementById('userAddPapOrg').value.trim(),
+                    alignmentGrowth: document.getElementById('userAddPapGrowth').value || null,
+                    alignmentAchieve: document.getElementById('userAddPapAchieve').value || null,
+                    remarksType: document.getElementById('userAddPapRemarksContinuingType').value.trim(),
+                    remarksTypeOther: document.getElementById('userAddPapRemarksContinuingOther').value.trim() || null,
+                    remarks: document.getElementById('userAddPapRemarks').value.trim() || null
+                };
+
+                addSaveBtn.disabled = true;
+                addSaveBtn.textContent = 'Saving...';
+
+                fetch('/Pages/User/Create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(function (res) {
+                    return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+                })
+                .then(function (result) {
+                    if (result.ok && result.data.success) {
+                        showCreateNewToast('Project saved as endorsed!', 'success');
+                        setTimeout(function () {
+                            resetCreateNewForm();
+                            window.location.href = '/Pages/User/Dashboard';
+                        }, 1500);
+                    } else {
+                        var errors = (result.data.errors || []).join('\n');
+                        showCreateNewToast(errors || 'Save failed. Please try again.', 'error');
+                    }
+                })
+                .catch(function (err) {
+                    showCreateNewToast('An error occurred while saving.', 'error');
+                    console.error(err);
+                })
+                .finally(function () {
+                    addSaveBtn.disabled = false;
+                    updateAddProgramSaveButtonLabel();
+                });
+            });
+        }
+
+        function showCreateNewToast(message, type) {
+            var existing = document.getElementById('createNewToast');
+            if (existing) existing.remove();
+
+            var toastEl = document.createElement('div');
+            toastEl.id = 'createNewToast';
+            toastEl.setAttribute('role', 'alert');
+            toastEl.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;min-width:280px;max-width:400px;padding:14px 20px;border-radius:8px;font-size:14px;font-weight:500;color:#fff;opacity:0;transition:opacity 0.3s;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+            toastEl.textContent = message;
+
+            if (type === 'success') {
+                toastEl.style.backgroundColor = '#198754';
+            } else {
+                toastEl.style.backgroundColor = '#dc3545';
+            }
+
+            document.body.appendChild(toastEl);
+            requestAnimationFrame(function () { toastEl.style.opacity = '1'; });
+
+            setTimeout(function () {
+                toastEl.style.opacity = '0';
+                setTimeout(function () { toastEl.remove(); }, 300);
+            }, 2500);
+        }
+
+        if (cancelBtn && cancelModal) {
+            cancelBtn.addEventListener('click', function () {
+                cancelModal.show();
+            });
+        }
+
+        if (cancelConfirmBtn && cancelModalEl) {
+            cancelConfirmBtn.addEventListener('click', function () {
+                var inst = bootstrap.Modal.getInstance(cancelModalEl);
+                if (inst) inst.hide();
+                resetCreateNewForm();
+            });
+        }
+    })();
+</script>

@@ -1,0 +1,13 @@
+@model DupdGrowth.Web.Models.DashboardDetailViewModel
+@{
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+    ViewData["SidebarUserName"] = "Sample User";
+    ViewData["ChartShowGrowthIndicator"] = false;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/User/Draft.css" asp-append-version="true" />
+}
+@await Html.PartialAsync("_DashboardDetailPageBody", Model)
+@section Scripts {
+    @await Html.PartialAsync("_DashboardPapDetailPageScripts")
+}

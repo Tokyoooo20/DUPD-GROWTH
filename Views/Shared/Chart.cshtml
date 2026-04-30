@@ -1,0 +1,71 @@
+@* SuperAdmin dashboard charts: bar (grouped, single) + pie. Script: ~/js/dashboard-charts.js
+   ViewData["ChartShowGrowthIndicator"] — bool, default true. Set false to hide GROWTH Indicator (e.g. VPAA page). *@
+@{
+    var showGrowthIndicator = ViewData["ChartShowGrowthIndicator"] as bool? ?? true;
+    var bottomPairColClass = showGrowthIndicator ? "col-12 col-lg-4" : "col-12 col-lg-6";
+}
+
+<div class="row g-3 g-lg-4 mb-3 mb-lg-4">
+    <div class="col-12">
+        <div class="card dashboard-card dashboard-card--featured h-100">
+            <div class="dashboard-card__header">
+                <div>
+                    <h2 class="dashboard-card__title text-dark mb-0">Status of PAPs</h2>
+                </div>
+            </div>
+            <div class="dashboard-card__body pt-3">
+                <div class="dashboard-chart-wrap dashboard-chart-wrap--main w-100">
+                    <canvas id="chartStatusPapGrouped" aria-label="Bar chart of PAP status by indicator"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 g-lg-4 align-items-stretch">
+    <div class="@bottomPairColClass dashboard-col">
+        <div class="card dashboard-card h-100">
+            <div class="dashboard-card__header">
+                <div>
+                    <h2 class="dashboard-card__title mb-0">Accomplishment of PAPs</h2>
+                </div>
+            </div>
+            <div class="dashboard-card__body pt-3">
+                <div class="dashboard-chart-wrap dashboard-chart-wrap--secondary w-100">
+                    <canvas id="chartAccomplishment" aria-label="Accomplishment bar chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    @if (showGrowthIndicator)
+    {
+        <div class="col-12 col-lg-4 dashboard-col">
+            <div class="card dashboard-card h-100">
+                <div class="dashboard-card__header">
+                    <div>
+                        <h2 class="dashboard-card__title mb-0">GROWTH Indicator Accomplishment</h2>
+                    </div>
+                </div>
+                <div class="dashboard-card__body pt-3">
+                    <div class="dashboard-chart-wrap dashboard-chart-wrap--secondary w-100">
+                        <canvas id="chartGrowthIndicator" aria-label="Growth indicator bar chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    <div class="@bottomPairColClass dashboard-col">
+        <div class="card dashboard-card h-100">
+            <div class="dashboard-card__header">
+                <div>
+                    <h2 class="dashboard-card__title mb-0">Number of PAPs</h2>
+                </div>
+            </div>
+            <div class="dashboard-card__body pt-3 d-flex flex-column align-items-stretch flex-grow-1">
+                <div class="dashboard-chart-wrap dashboard-chart-wrap--pie w-100">
+                    <canvas id="chartStatusPie" aria-label="Pie chart of PAP counts by GROWTH letter"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

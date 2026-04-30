@@ -1,0 +1,436 @@
+/* Dashboard layout: viewport-height shell; only main content scrolls (sidebar stays fixed height). */
+
+/*
+  Full-page navigations (Dashboard ↔ Reports) redraw the whole document. Without a matching
+  base color, the browser often flashes white before paint — the sidebar looks like it "blinks".
+  This gradient approximates the final layout (268px = .app-sidebar width) on the first paint.
+*/
+html {
+  background-color: #0a0e17;
+}
+
+body.app-layout-body {
+  background: linear-gradient(
+    to right,
+    #0a0e17 0,
+    #0a0e17 268px,
+    #f8f9fa 268px,
+    #f8f9fa 100%
+  );
+}
+
+/* Smoother same-origin navigations where supported (Chromium 126+). */
+@view-transition {
+  navigation: auto;
+}
+
+.app-layout-body {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+.app-shell {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+}
+
+.app-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app-topbar {
+  min-height: 56px;
+}
+
+.app-navbar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(94, 180, 255, 0.9), rgba(99, 102, 241, 0.9));
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.06);
+  display: inline-block;
+}
+
+.app-sidebar {
+  --sidebar-bg: #0a0e17;
+  --sidebar-surface: rgba(56, 139, 253, 0.12);
+  --sidebar-active: #5eb4ff;
+  --sidebar-text: #e8edf5;
+  --sidebar-divider: #1c2433;
+
+  flex: 0 0 268px;
+  display: flex;
+  flex-direction: column;
+  width: 268px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--sidebar-bg);
+  padding: 1.35rem 1rem 1.25rem;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+.app-sidebar *,
+.app-sidebar *::before,
+.app-sidebar *::after {
+  box-sizing: border-box;
+}
+
+.app-sidebar-brand {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0 0.35rem 1.35rem;
+  color: var(--sidebar-text);
+}
+
+.app-sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.app-sidebar-logo-mark {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.app-sidebar-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #fff;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-sidebar-subtitle {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(232, 237, 245, 0.55);
+  letter-spacing: 0.02em;
+}
+
+.app-sidebar-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-right: -0.25rem;
+  padding-right: 0.25rem;
+}
+
+.app-sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.app-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+.app-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 1.3rem;
+}
+
+.app-sidebar-nav-item-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+/* Secondary action under Project (e.g. Drop) */
+.app-sidebar-link--nested {
+  padding-left: 2.25rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0.96;
+}
+
+.app-sidebar-link--nested .app-sidebar-link-label {
+  font-size: 0.85rem;
+}
+
+/* Project: link to table + chevron toggles Drop submenu */
+.app-sidebar-project-row {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.app-sidebar-project-link {
+  min-width: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.app-sidebar-project-chevron-btn {
+  flex: 0 0 2.35rem;
+  width: auto;
+  min-width: 2.35rem;
+  max-width: 2.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.62rem 0.35rem 0.62rem 0.25rem;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #fff !important;
+  cursor: pointer;
+  border-top-right-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  font: inherit;
+  line-height: 1.25;
+}
+
+.app-sidebar-project-chevron-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.app-sidebar-project-chevron {
+  transition: transform 0.2s ease;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.app-sidebar-project-chevron-btn[aria-expanded="true"] .app-sidebar-project-chevron {
+  transform: rotate(180deg);
+}
+
+.app-sidebar-project-menu {
+  margin-top: 0.1rem;
+}
+
+.app-sidebar-project-menu .app-sidebar-link--nested {
+  margin-top: 0.05rem;
+}
+
+/* Mini rail: keep chevron visible so Project submenu can still toggle */
+.dashboard-sidebar-shell.is-collapsed .app-sidebar-project-chevron-btn {
+  flex: 0 0 1.65rem;
+  min-width: 1.65rem;
+  max-width: 1.85rem;
+  padding-left: 0.2rem;
+  padding-right: 0.2rem;
+}
+
+.dashboard-sidebar-shell.is-collapsed .app-sidebar-project-chevron {
+  opacity: 0.9;
+  font-size: 0.8rem;
+}
+
+.dashboard-sidebar-shell.is-collapsed .app-sidebar-project-link {
+  min-width: 0;
+}
+
+.dashboard-sidebar-shell.is-collapsed .app-sidebar-link--nested {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  justify-content: center;
+}
+
+.app-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.62rem 0.75rem;
+  border-radius: 0.5rem;
+  color: #fff;
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.25;
+  transition: background 0.15s ease, color 0.15s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-sidebar a.app-sidebar-link:link,
+.app-sidebar a.app-sidebar-link:visited,
+.app-sidebar a.app-sidebar-link:hover,
+.app-sidebar a.app-sidebar-link:focus,
+.app-sidebar a.app-sidebar-link:focus-visible,
+.app-sidebar button.app-sidebar-link,
+.app-sidebar button.app-sidebar-link:hover,
+.app-sidebar button.app-sidebar-link:focus,
+.app-sidebar button.app-sidebar-link:focus-visible {
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+.app-sidebar-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.app-sidebar-link-label {
+  color: #fff !important;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.app-sidebar-link.active .app-sidebar-link-label {
+  color: var(--sidebar-active) !important;
+}
+
+.app-sidebar a.app-sidebar-link.active:link,
+.app-sidebar a.app-sidebar-link.active:visited,
+.app-sidebar a.app-sidebar-link.active:hover,
+.app-sidebar a.app-sidebar-link.active:focus,
+.app-sidebar a.app-sidebar-link.active:focus-visible,
+.app-sidebar-link.active {
+  color: var(--sidebar-active) !important;
+  background: var(--sidebar-surface);
+}
+
+.app-sidebar-link.active:hover {
+  background: var(--sidebar-surface);
+}
+
+.app-sidebar-link.active:hover .app-sidebar-link-label {
+  color: var(--sidebar-active) !important;
+}
+
+.app-sidebar-divider {
+  flex-shrink: 0;
+  border: 0;
+  border-top: 1px solid var(--sidebar-divider);
+  margin: 0.85rem 0 0.65rem;
+}
+
+.app-sidebar-footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-right: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Collapsible sidebar shell (opt-in): wrap .app-sidebar for full ↔ mini rail.
+   Main content grows via existing .app-shell / .app-content flex rules.
+   Width tokens on :root so body background gradient can use the same values.
+   --------------------------------------------------------------------------- */
+:root {
+  --dashboard-sidebar-w-expanded: 268px;
+  --dashboard-sidebar-w-mini: 72px;
+}
+
+.dashboard-sidebar-shell {
+  flex: 0 0 auto;
+  width: var(--dashboard-sidebar-w-expanded);
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: visible;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.dashboard-sidebar-shell.is-collapsed {
+  width: var(--dashboard-sidebar-w-mini);
+}
+
+.dashboard-sidebar-shell .app-sidebar {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 0;
+  padding-top: 2.6rem;
+  transition: padding 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-sidebar-shell .app-sidebar-brand-text,
+.dashboard-sidebar-shell .app-sidebar-link-label {
+  transition: opacity 0.22s ease, max-width 0.28s cubic-bezier(0.4, 0, 0.2, 1), margin 0.22s ease;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 14rem;
+}
+
+.dashboard-sidebar-shell.is-collapsed .app-sidebar-brand-text,
+.dashboard-sidebar-shell.is-collapsed .app-sidebar-link-label {
+  opacity: 0;
+  max-width: 0;
+  margin: 0 !important;
+  pointer-events: none;
+}
+
+.dashboard-sidebar-shell.is-collapsed .app-sidebar-brand {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.dashboard-sidebar-shell.is-collapsed .app-sidebar-link {
+  justify-content: center;
+  gap: 0;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.dashboard-sidebar-shell.is-collapsed .app-sidebar-divider {
+  margin-left: 0.25rem;
+  margin-right: 0.25rem;
+}
+
+body.app-layout-body:has(.dashboard-sidebar-shell.is-collapsed) {
+  background: linear-gradient(
+    to right,
+    #0a0e17 0,
+    #0a0e17 var(--dashboard-sidebar-w-mini),
+    #f8f9fa var(--dashboard-sidebar-w-mini),
+    #f8f9fa 100%
+  );
+}
+
+.dashboard-sidebar-toggle {
+  --bs-btn-color: rgba(255, 255, 255, 0.92);
+  --bs-btn-border-color: rgba(255, 255, 255, 0.18);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: rgba(255, 255, 255, 0.08);
+  --bs-btn-hover-border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-sidebar-shell,
+  .dashboard-sidebar-shell .app-sidebar,
+  .dashboard-sidebar-shell .app-sidebar-brand-text,
+  .dashboard-sidebar-shell .app-sidebar-link-label {
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,294 @@
+@model DupdGrowth.Web.Models.PagedUserListViewModel
+@{
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+    ViewData["Title"] = "Users";
+    ViewData["SidebarActive"] = "users";
+    ViewData["SidebarUserName"] = "Sample User";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/SuperAdmin/superadmin-dashboard.css" asp-append-version="true" />
+    <style>
+        .users-list-container.users-list-loading {
+            opacity: 0.55;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+
+        /* Toolbar: full-width stacked on small screens; avoid clipped placeholder / select label */
+        #usersFilterForm.users-filter-toolbar {
+            --users-filter-select-min: 13.5rem;
+        }
+
+        #usersFilterForm .users-filter-search-wrap {
+            min-width: 0;
+        }
+
+        #usersFilterForm .users-filter-search-wrap .input-group {
+            width: 100%;
+        }
+
+        #usersFilterForm #usersSearch {
+            min-width: 0;
+        }
+
+        #usersFilterForm #usersOffice {
+            width: 100%;
+            min-width: var(--users-filter-select-min);
+        }
+    </style>
+}
+<div class="app-shell d-flex">
+    @await Html.PartialAsync("_Sidebar")
+    <div class="app-content d-flex flex-column flex-grow-1 min-w-0">
+        @await Html.PartialAsync("Navbar")
+        <main role="main" class="app-main flex-grow-1 bg-light">
+            <div class="container-fluid dashboard-page dashboard-page--tight px-3 px-sm-4 px-lg-5 pb-4 pb-lg-4">
+            <header class="dashboard-page-header mb-2 mb-lg-3">
+                    <h1 class="dashboard-page-title">USERS</h1>
+                </header>
+                <div class="card dashboard-card border-0 shadow-sm">
+                    <div class="dashboard-card__header border-bottom py-3 px-3 px-md-4">
+                        <form method="get" asp-controller="Users" asp-action="Users" id="usersFilterForm" class="users-filter-toolbar row g-3 align-items-center">
+                            <input type="hidden" name="page" value="1" id="usersFilterResetPage" />
+                            <div class="col-12 col-lg-8 users-filter-search-wrap">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0 flex-shrink-0"><i class="bi bi-search" aria-hidden="true"></i></span>
+                                    <input type="search"
+                                           class="form-control border-start-0"
+                                           id="usersSearch"
+                                           name="search"
+                                           value="@Model.Search"
+                                           placeholder="Search by name or email"
+                                           title="Search by name or email"
+                                           autocomplete="off" />
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-4">
+                                <select name="office"
+                                        id="usersOffice"
+                                        class="form-select"
+                                        aria-label="Filter by office"
+                                        title="Filter by office">
+                                    @if (string.Equals(Model.Office, "all", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <option value="all" selected>All offices</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="all">All offices</option>
+                                    }
+                                    @foreach (var o in Model.OfficeOptions)
+                                    {
+                                        if (string.Equals(Model.Office, o, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <option value="@o" selected>@o</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@o">@o</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div id="usersListContainer" class="users-list-container">
+                        @await Html.PartialAsync("_UserListResults", Model)
+                    </div>
+                </div>
+            </div>
+        </main>
+        @{
+            var deleteUserModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+            {
+                ["ModalId"] = "deleteUserModal",
+                ["ModalTitle"] = "Delete user",
+                ["ModalSize"] = "modal-sm",
+                ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to delete <strong id=\"deleteUserModalName\"></strong>? This cannot be undone.</p>",
+                ["ModalPrimaryText"] = "Delete",
+                ["ModalSecondaryText"] = "Cancel",
+                ["ModalPrimaryButtonId"] = "deleteUserModalConfirm",
+                ["ModalPrimaryDismiss"] = false,
+            };
+            var approveUserModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+            {
+                ["ModalId"] = "approveUserModal",
+                ["ModalTitle"] = "Approve user",
+                ["ModalSize"] = "modal-sm",
+                ["ModalBody"] = "<p class=\"mb-0\">Approve <strong id=\"approveUserModalName\"></strong>? They will be able to log in after approval.</p>",
+                ["ModalPrimaryText"] = "Approve",
+                ["ModalSecondaryText"] = "Cancel",
+                ["ModalPrimaryButtonId"] = "approveUserModalConfirm",
+                ["ModalPrimaryDismiss"] = false,
+            };
+        }
+        @await Html.PartialAsync("Modal", null, deleteUserModal)
+        @await Html.PartialAsync("Modal", null, approveUserModal)
+        <form id="deleteUserForm" asp-controller="Users" asp-action="DeleteUser" method="post" class="d-none">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="deleteUserFormId" />
+            <input type="hidden" name="page" id="deleteUserFormPage" />
+            <input type="hidden" name="search" id="deleteUserFormSearch" value="@Model.Search" />
+            <input type="hidden" name="office" id="deleteUserFormOffice" value="@Model.Office" />
+        </form>
+        <form id="approveUserForm" asp-controller="Users" asp-action="ApproveUser" method="post" class="d-none">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="approveUserFormId" />
+            <input type="hidden" name="page" id="approveUserFormPage" />
+            <input type="hidden" name="search" id="approveUserFormSearch" value="@Model.Search" />
+            <input type="hidden" name="office" id="approveUserFormOffice" value="@Model.Office" />
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        (function () {
+            var filterForm = document.getElementById('usersFilterForm');
+            var pageReset = document.getElementById('usersFilterResetPage');
+            var searchInput = document.getElementById('usersSearch');
+            var officeSelect = document.getElementById('usersOffice');
+            var listContainer = document.getElementById('usersListContainer');
+            var searchDebounceMs = 320;
+            var searchTimer;
+
+            function syncFilterStateFromDom() {
+                var results = document.querySelector('[data-users-results]');
+                var p = results ? results.getAttribute('data-current-page') : null;
+                if (pageReset && p) pageReset.value = p;
+                var search = searchInput ? searchInput.value : '';
+                var office = officeSelect ? officeSelect.value : 'all';
+                var fs = document.getElementById('deleteUserFormSearch');
+                var fo = document.getElementById('deleteUserFormOffice');
+                if (fs) fs.value = search;
+                if (fo) fo.value = office;
+                var afs = document.getElementById('approveUserFormSearch');
+                var afo = document.getElementById('approveUserFormOffice');
+                if (afs) afs.value = search;
+                if (afo) afo.value = office;
+            }
+
+            function updateUrlFromForm() {
+                if (!filterForm) return;
+                var qs = new URLSearchParams(new FormData(filterForm)).toString();
+                var url = document.createElement('a');
+                url.href = filterForm.action || window.location.href;
+                history.replaceState(null, '', url.pathname + (qs ? '?' + qs : ''));
+            }
+
+            function loadUsersListAjax() {
+                if (!filterForm || !listContainer) return;
+                listContainer.classList.add('users-list-loading');
+                var qs = new URLSearchParams(new FormData(filterForm)).toString();
+                var base = filterForm.action || window.location.pathname;
+                var join = base.indexOf('?') >= 0 ? '&' : '?';
+                var url = base + join + qs;
+                fetch(url, {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+                    credentials: 'same-origin'
+                }).then(function (r) {
+                    if (!r.ok) throw new Error('Request failed');
+                    return r.text();
+                }).then(function (html) {
+                    listContainer.innerHTML = html;
+                    syncFilterStateFromDom();
+                    updateUrlFromForm();
+                }).catch(function () {
+                    filterForm.submit();
+                }).finally(function () {
+                    listContainer.classList.remove('users-list-loading');
+                });
+            }
+
+            function resetPageToOneAndLoad() {
+                if (pageReset) pageReset.value = '1';
+                loadUsersListAjax();
+            }
+
+            if (searchInput && filterForm) {
+                searchInput.addEventListener('input', function () {
+                    clearTimeout(searchTimer);
+                    searchTimer = setTimeout(resetPageToOneAndLoad, searchDebounceMs);
+                });
+            }
+
+            if (officeSelect && filterForm) {
+                officeSelect.addEventListener('change', resetPageToOneAndLoad);
+            }
+
+            if (listContainer) {
+                listContainer.addEventListener('click', function (e) {
+                    var a = e.target.closest('a.page-link');
+                    if (!a || !listContainer.contains(a)) return;
+                    e.preventDefault();
+                    var pageLi = a.closest('.page-item');
+                    if (pageLi && pageLi.classList.contains('disabled')) return;
+                    listContainer.classList.add('users-list-loading');
+                    fetch(a.href, {
+                        method: 'GET',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+                        credentials: 'same-origin'
+                    }).then(function (r) {
+                        if (!r.ok) throw new Error('Request failed');
+                        return r.text();
+                    }).then(function (html) {
+                        listContainer.innerHTML = html;
+                        try {
+                            var u = new URL(a.href, window.location.origin);
+                            history.replaceState(null, '', u.pathname + u.search);
+                        } catch (err) { }
+                        syncFilterStateFromDom();
+                    }).catch(function () {
+                        window.location.href = a.href;
+                    }).finally(function () {
+                        listContainer.classList.remove('users-list-loading');
+                    });
+                });
+            }
+
+            var deleteModalEl = document.getElementById('deleteUserModal');
+            if (deleteModalEl) {
+                deleteModalEl.addEventListener('show.bs.modal', function (event) {
+                    var btn = event.relatedTarget;
+                    if (!btn || !btn.hasAttribute('data-user-id')) return;
+                    document.getElementById('deleteUserFormId').value = btn.getAttribute('data-user-id');
+                    document.getElementById('deleteUserFormPage').value = btn.getAttribute('data-page') || '1';
+                    var s = btn.getAttribute('data-search');
+                    var o = btn.getAttribute('data-office');
+                    if (s !== null) document.getElementById('deleteUserFormSearch').value = s;
+                    if (o !== null) document.getElementById('deleteUserFormOffice').value = o;
+                    var nameEl = document.getElementById('deleteUserModalName');
+                    if (nameEl) nameEl.textContent = btn.getAttribute('data-user-name') || '';
+                });
+            }
+            var deleteConfirmBtn = document.getElementById('deleteUserModalConfirm');
+            if (deleteConfirmBtn) {
+                deleteConfirmBtn.addEventListener('click', function () {
+                    document.getElementById('deleteUserForm').requestSubmit();
+                });
+            }
+
+            var approveModalEl = document.getElementById('approveUserModal');
+            if (approveModalEl) {
+                approveModalEl.addEventListener('show.bs.modal', function (event) {
+                    var btn = event.relatedTarget;
+                    if (!btn || !btn.hasAttribute('data-user-approve-id')) return;
+                    document.getElementById('approveUserFormId').value = btn.getAttribute('data-user-approve-id');
+                    document.getElementById('approveUserFormPage').value = btn.getAttribute('data-page') || '1';
+                    var s = btn.getAttribute('data-search');
+                    var o = btn.getAttribute('data-office');
+                    if (s !== null) document.getElementById('approveUserFormSearch').value = s;
+                    if (o !== null) document.getElementById('approveUserFormOffice').value = o;
+                    var nameEl = document.getElementById('approveUserModalName');
+                    if (nameEl) nameEl.textContent = btn.getAttribute('data-user-approve-name') || '';
+                });
+            }
+            var approveConfirmBtn = document.getElementById('approveUserModalConfirm');
+            if (approveConfirmBtn) {
+                approveConfirmBtn.addEventListener('click', function () {
+                    document.getElementById('approveUserForm').requestSubmit();
+                });
+            }
+        })();
+    </script>
+}

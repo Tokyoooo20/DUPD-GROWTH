@@ -1,0 +1,101 @@
+@{
+    var active = (ViewData["SidebarActive"] as string)?.ToLowerInvariant();
+    var displayName = ViewData["SidebarUserName"] as string ?? "Sample User";
+    var projectSubmenuOpen = active is "project" or "createnew" or "dropped" or "completed" or "draft";
+}
+
+<aside class="app-sidebar">
+    <div class="app-sidebar-brand" aria-label="Signed in as @displayName">
+        <i class="bi bi-person-circle app-sidebar-logo-mark" aria-hidden="true"></i>
+        <div class="app-sidebar-brand-text">
+            <span class="app-sidebar-title">@displayName</span>
+            <span class="app-sidebar-subtitle">Signed in</span>
+        </div>
+    </div>
+    <div class="app-sidebar-scroll">
+        <nav class="app-sidebar-nav" aria-label="Main">
+            <a class="app-sidebar-link text-decoration-none @(active == "dashboard" ? "active" : "")" asp-controller="Client" asp-action="UserDashboard">
+                <i class="bi bi-list" aria-hidden="true"></i>
+                <span class="app-sidebar-link-label">Dashboard</span>
+            </a>
+            <div class="app-sidebar-nav-item-group">
+                <div class="d-flex align-items-stretch app-sidebar-project-row">
+                    <a class="app-sidebar-link app-sidebar-project-link flex-grow-1 text-decoration-none min-w-0 @(active == "project" ? "active" : "")"
+                       asp-controller="Client"
+                       asp-action="UserProject"
+                       title="View project table">
+                        <i class="bi bi-file-earmark" aria-hidden="true"></i>
+                        <span class="app-sidebar-link-label">Project</span>
+                    </a>
+                    <button type="button"
+                            class="app-sidebar-project-chevron-btn @(projectSubmenuOpen ? "" : "collapsed")"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#sidebarUserProjectMenu"
+                            aria-expanded="@(projectSubmenuOpen ? "true" : "false")"
+                            aria-controls="sidebarUserProjectMenu"
+                            id="sidebarUserProjectToggle"
+                            title="Show or hide project pages">
+                        <i class="bi bi-chevron-down app-sidebar-project-chevron" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div id="sidebarUserProjectMenu" class="collapse app-sidebar-project-menu @(projectSubmenuOpen ? "show" : "")">
+                    <a class="app-sidebar-link app-sidebar-link--nested text-decoration-none @(active == "createnew" ? "active" : "")"
+                       asp-controller="Client"
+                       asp-action="CreateNew"
+                       title="Create new program or project">
+                        <i class="bi bi-plus-circle" aria-hidden="true"></i>
+                        <span class="app-sidebar-link-label">Create New</span>
+                    </a>
+                    <a class="app-sidebar-link app-sidebar-link--nested text-decoration-none @(active == "dropped" ? "active" : "")"
+                       asp-controller="Client"
+                       asp-action="UserDropped"
+                       title="View dropped projects">
+                        <i class="bi bi-trash3" aria-hidden="true"></i>
+                        <span class="app-sidebar-link-label">Dropped</span>
+                    </a>
+                    <a class="app-sidebar-link app-sidebar-link--nested text-decoration-none @(active == "completed" ? "active" : "")"
+                       asp-controller="Client"
+                       asp-action="Completed"
+                       title="Completed projects">
+                        <i class="bi bi-patch-check" aria-hidden="true"></i>
+                        <span class="app-sidebar-link-label">Completed</span>
+                    </a>
+                    <a class="app-sidebar-link app-sidebar-link--nested text-decoration-none @(active == "draft" ? "active" : "")"
+                       asp-controller="Client"
+                       asp-action="Draft"
+                       title="Draft projects">
+                        <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+                        <span class="app-sidebar-link-label">Draft</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <hr class="app-sidebar-divider" />
+    <nav class="app-sidebar-footer" aria-label="Account">
+        <button type="button"
+                class="app-sidebar-link text-decoration-none"
+                data-bs-toggle="modal"
+                data-bs-target="#logoutConfirmModal"
+                aria-haspopup="dialog"
+                aria-controls="logoutConfirmModal">
+            <i class="bi bi-box-arrow-left" aria-hidden="true"></i>
+            <span class="app-sidebar-link-label">Log Out</span>
+        </button>
+    </nav>
+
+    @{
+        var logoutModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+        {
+            ["ModalId"] = "logoutConfirmModal",
+            ["ModalTitle"] = "Log out?",
+            ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to log out?</p>",
+            ["ModalSize"] = "modal-sm",
+            ["ModalPrimaryUrl"] = Url.Action("Login", "Login"),
+            ["ModalPrimaryText"] = "Log out",
+            ["ModalSecondaryText"] = "Cancel",
+        };
+    }
+    @await Html.PartialAsync("Modal", null, logoutModal)
+
+</aside>

@@ -1,0 +1,67 @@
+@{
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+    ViewData["SidebarUserName"] = "Sample User";
+    ViewData["ChartShowGrowthIndicator"] = false;
+    ViewData["UserReportAddProgramShowQuarterStatus"] = false;
+    ViewData["UserReportAddProgramCreateNewLayout"] = true;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/User/CreateNew.css" asp-append-version="true" />
+}
+<div class="app-shell d-flex">
+    @await Html.PartialAsync("_CollapsibleUserSidebarShell")
+    <div class="app-content d-flex flex-column flex-grow-1 min-w-0">
+        @await Html.PartialAsync("Navbar")
+        <main role="main" class="app-main flex-grow-1 bg-light">
+            <div class="container-fluid dashboard-page dashboard-page--tight px-3 px-sm-4 px-lg-5 py-4">
+                <header class="dashboard-page-header mb-3">
+                    <h1 class="dashboard-page-title">Create new</h1>
+                    <p class="text-body-secondary small mb-0">Enter the details for a new program or project.</p>
+                </header>
+                <div id="papTableCard" class="pap-table-card-wrap">
+                    <form id="createNewPapForm"
+                          class="dashboard-card__body p-3 p-md-4 bg-white"
+                          method="post"
+                          autocomplete="off">
+                        @Html.AntiForgeryToken()
+                        @await Html.PartialAsync("_UserReportAddProgramFormFields")
+                        <div class="d-flex flex-wrap gap-2 justify-content-end border-top pt-3 mt-4">
+                            <button type="button" class="btn btn-outline-secondary" id="createNewCancelBtn">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="userReportAddProgramSave">Save as Endorsed</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+@{
+    var createNewSaveEndorsedModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "createNewSaveEndorsedConfirmModal",
+        ["ModalTitle"] = "Save as endorsed?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to save this project as endorsed?</p>",
+        ["ModalPrimaryText"] = "Save as Endorsed",
+        ["ModalPrimaryButtonId"] = "createNewSaveEndorsedConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Close",
+    };
+    var createNewCancelModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "createNewCancelConfirmModal",
+        ["ModalTitle"] = "Clear the form?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">All text you entered will be removed from this page.</p>",
+        ["ModalPrimaryText"] = "Clear",
+        ["ModalPrimaryButtonId"] = "createNewCancelConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Stay",
+    };
+}
+@await Html.PartialAsync("Modal", null, createNewSaveEndorsedModal)
+@await Html.PartialAsync("Modal", null, createNewCancelModal)
+@section Scripts {
+    @await Html.PartialAsync("_DashboardPapDetailPageScripts")
+    @await Html.PartialAsync("_UserReportCreateNewFormScripts")
+}

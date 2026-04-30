@@ -1,0 +1,16 @@
+@* Super Admin PAP list at /Pages/Reports (Priority No. column; no client-only toolbar). *@
+@model DupdGrowth.Web.Models.DashboardDetailViewModel
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@{
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+    ViewData["DashboardDetailShowPriorityNoColumn"] = true;
+    var papTableViewData = new ViewDataDictionary(ViewData) { ["DashboardDetailShowPriorityNoColumn"] = true };
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/SuperAdmin/superadmin-dashboard.css" asp-append-version="true" />
+}
+@await Html.PartialAsync("_DashboardDetailPageBody", Model, papTableViewData)
+@section Scripts {
+    <script src="~/js/dashboard-charts.js" asp-append-version="true"></script>
+    @await Html.PartialAsync("_DashboardPapDetailPageScripts")
+}

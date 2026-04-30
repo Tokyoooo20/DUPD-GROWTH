@@ -1,0 +1,86 @@
+@{
+    var active = (ViewData["SidebarActive"] as string)?.ToLowerInvariant();
+    var displayName = ViewData["SidebarUserName"] as string ?? "Sample User";
+}
+
+<aside class="app-sidebar">
+    <div class="app-sidebar-brand" aria-label="Signed in as @displayName">
+        <i class="bi bi-person-circle app-sidebar-logo-mark" aria-hidden="true"></i>
+        <div class="app-sidebar-brand-text">
+            <span class="app-sidebar-title">@displayName</span>
+            <span class="app-sidebar-subtitle">Signed in</span>
+        </div>
+    </div>
+    <div class="app-sidebar-scroll">
+        <nav class="app-sidebar-nav" aria-label="Main">
+            <a class="app-sidebar-link text-decoration-none @(active == "dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Dashboard">
+                <i class="bi bi-list" aria-hidden="true"></i>
+                <span class="app-sidebar-link-label">Dashboard</span>
+            </a>
+            <a class="app-sidebar-link text-decoration-none @(active == "vpaa" ? "active" : "")" asp-controller="Vpaa" asp-action="VPAA">
+                <i class="bi bi-buildings" aria-hidden="true"></i>
+                <span class="app-sidebar-link-label">VPAA</span>
+            </a>
+            <a class="app-sidebar-link text-decoration-none @(active == "vprie" ? "active" : "")" asp-controller="Vprie" asp-action="VPRIE">
+                <i class="bi bi-buildings" aria-hidden="true"></i>
+                <span class="app-sidebar-link-label">VPRIE</span>
+            </a>
+            <a class="app-sidebar-link text-decoration-none @(active == "vpfa" ? "active" : "")" asp-controller="Vpfa" asp-action="VPFA">
+                <i class="bi bi-buildings" aria-hidden="true"></i>
+                <span class="app-sidebar-link-label">VPFA</span>
+            </a>
+            <a class="app-sidebar-link text-decoration-none @(active == "vpgaso" ? "active" : "")" asp-controller="Vpgaso" asp-action="VPGASO">
+                <i class="bi bi-buildings" aria-hidden="true"></i>
+                <span class="app-sidebar-link-label">VPGASO</span>
+            </a>
+            <a class="app-sidebar-link text-decoration-none @(active == "president" ? "active" : "")" asp-controller="UniversityPresident" asp-action="UniversityPresident">
+                <i class="bi bi-buildings" aria-hidden="true"></i>
+                <span class="app-sidebar-link-label">University President</span>
+            </a>
+            <a class="app-sidebar-link text-decoration-none @(active == "chancellor" ? "active" : "")" asp-controller="Chancellor" asp-action="Chancellor">
+                <i class="bi bi-buildings" aria-hidden="true"></i>
+                <span class="app-sidebar-link-label">Chancellor</span>
+            </a>
+            <a class="app-sidebar-link text-decoration-none @(active == "reports" ? "active" : "")" asp-controller="Dashboard" asp-action="Reports">
+                <i class="bi bi-file-earmark" aria-hidden="true"></i>
+                <span class="app-sidebar-link-label">Reports</span>
+            </a>
+            <a class="app-sidebar-link text-decoration-none @(active == "office" ? "active" : "")" asp-controller="OfficeManagement" asp-action="OfficeManagement">
+                <i class="bi bi-building" aria-hidden="true"></i>
+                <span class="app-sidebar-link-label">Office Management</span>
+            </a>
+            <a class="app-sidebar-link text-decoration-none @(active == "users" ? "active" : "")" asp-controller="Users" asp-action="Users">
+                <i class="bi bi-person" aria-hidden="true"></i>
+                <span class="app-sidebar-link-label">Users</span>
+            </a>
+        </nav>
+    </div>
+    <hr class="app-sidebar-divider" />
+    <nav class="app-sidebar-footer" aria-label="Account">
+        <button type="button"
+                class="app-sidebar-link text-decoration-none"
+                data-bs-toggle="modal"
+                data-bs-target="#logoutConfirmModal"
+                aria-haspopup="dialog"
+                aria-controls="logoutConfirmModal">
+            <i class="bi bi-box-arrow-left" aria-hidden="true"></i>
+            <span class="app-sidebar-link-label">Log Out</span>
+        </button>
+    </nav>
+
+    @{
+        var logoutModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+        {
+            ["ModalId"] = "logoutConfirmModal",
+            ["ModalTitle"] = "Log out?",
+            ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to log out?</p>",
+            ["ModalSize"] = "modal-sm",
+            ["ModalPrimaryUrl"] = Url.Action("Login", "Login"),
+            ["ModalPrimaryText"] = "Log out",
+            ["ModalSecondaryText"] = "Cancel",
+        };
+    }
+    @await Html.PartialAsync("Modal", null, logoutModal)
+
+</aside>
+

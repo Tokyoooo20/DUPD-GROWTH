@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dupd-growth-web-7c3e9b2a-4f1d-4c8e-9a6b-2d5f8e1c4a7b</UserSecretsId>
+  </PropertyGroup>
+
+  <!-- Avoid MSB3021 when antivirus/Controlled Folder Access blocks dotnet.exe from writing DupdGrowth.Web.exe -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="MySql.Data" Version="9.6.0" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+  </ItemGroup>
+
+  <!-- Razor runtime compilation: ensure .cshtml are present in publish output. -->
+  <ItemGroup>
+    <Content Update="Views\**\*.cshtml" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

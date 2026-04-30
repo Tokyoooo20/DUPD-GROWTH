@@ -1,0 +1,72 @@
+@model DashboardKpiStripViewModel
+@{
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+    ViewData["Title"] = "User dashboard";
+    ViewData["SidebarActive"] = "dashboard";
+    ViewData["SidebarUserName"] = "Sample User";
+    ViewData["NavbarShowYear"] = false;
+    ViewData["ChartShowGrowthIndicator"] = false;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/User/UserDashboard.css" asp-append-version="true" />
+}
+<div class="app-shell d-flex">
+    @await Html.PartialAsync("_CollapsibleUserSidebarShell")
+    <div class="app-content d-flex flex-column flex-grow-1 min-w-0">
+        @await Html.PartialAsync("Navbar")
+        <main role="main" class="app-main flex-grow-1 bg-light">
+            <div class="container-fluid dashboard-page dashboard-page--tight px-3 px-sm-4 px-lg-5 pb-4 pb-lg-4">
+                <header class="dashboard-page-header mb-2 mb-lg-3">
+                    <h1 class="dashboard-page-title">User dashboard</h1>
+                </header>
+
+                <div class="row g-3 g-lg-4 mb-3 mb-lg-4">
+                    <div class="col-6 col-xl-3">
+                        <div class="h-100" data-kpi-total-paps data-value="@Model.TotalPapsValue" data-label="Total PAPs"></div>
+                    </div>
+                    <div class="col-6 col-xl-3">
+                        <div class="dashboard-kpi-card h-100">
+                            <div class="dashboard-kpi-card__icon dashboard-kpi-card__icon--completed" aria-hidden="true">
+                                <i class="bi bi-patch-check-fill"></i>
+                            </div>
+                            <div class="dashboard-kpi-card__content">
+                                <span class="dashboard-kpi-card__label">Completed</span>
+                                <span class="dashboard-kpi-card__value">@Model.CompletedPercent</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-xl-3">
+                        <div class="dashboard-kpi-card h-100">
+                            <div class="dashboard-kpi-card__icon dashboard-kpi-card__icon--ongoing" aria-hidden="true">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </div>
+                            <div class="dashboard-kpi-card__content">
+                                <span class="dashboard-kpi-card__label">Ongoing</span>
+                                <span class="dashboard-kpi-card__value">@Model.OngoingPercent</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-xl-3">
+                        <div class="dashboard-kpi-card h-100">
+                            <div class="dashboard-kpi-card__icon dashboard-kpi-card__icon--not-started" aria-hidden="true">
+                                <i class="bi bi-dash-circle"></i>
+                            </div>
+                            <div class="dashboard-kpi-card__content">
+                                <span class="dashboard-kpi-card__label">Not started</span>
+                                <span class="dashboard-kpi-card__value">@Model.NotStartedPercent</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @await Html.PartialAsync("Chart")
+            </div>
+        </main>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/lib/chart.js/dist/chart.umd.min.js" asp-append-version="true"></script>
+    <script src="~/lib/chartjs-plugin-datalabels/chartjs-plugin-datalabels.min.js" asp-append-version="true"></script>
+    <script src="~/js/dashboard-charts.js" asp-append-version="true"></script>
+    @await Html.PartialAsync("_DashboardPapDetailPageScripts")
+}

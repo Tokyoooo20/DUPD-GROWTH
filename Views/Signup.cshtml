@@ -1,0 +1,219 @@
+@model DupdGrowth.Web.Models.SignupViewModel
+@{
+    Layout = "~/Views/Shared/_LayoutAuth.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" crossorigin="anonymous" />
+    <style>
+        /* Closed field: one line + ellipsis like native Office .form-select (Tom Select defaults to flex-wrap) */
+        .signup-suboffice-wrap .ts-wrapper.single .ts-control {
+            flex-wrap: nowrap !important;
+            overflow: hidden;
+        }
+        .signup-suboffice-wrap .ts-wrapper.single .ts-control .item {
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .signup-suboffice-wrap .ts-wrapper.single .ts-control > input {
+            flex: 0 1 auto !important;
+            min-width: 0 !important;
+        }
+        .signup-suboffice-wrap .ts-wrapper.single.input-active .ts-control > input {
+            flex: 1 1 auto !important;
+            min-width: 2ch !important;
+        }
+        /* One outline like native .form-select: focus ring on wrapper, not inner control */
+        .signup-suboffice-wrap .ts-wrapper.form-select .ts-control {
+            box-shadow: none !important;
+        }
+        .signup-suboffice-wrap .ts-wrapper.form-select.focus .ts-control {
+            border-color: transparent !important;
+        }
+        .signup-suboffice-wrap .ts-wrapper.form-select.focus {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            outline: 0;
+        }
+        /* Full list height (no short panel); browser scrolls the page if needed */
+        .signup-suboffice-wrap .ts-dropdown-content {
+            max-height: none;
+        }
+        /* No yellow search-match tint */
+        .signup-suboffice-wrap .ts-dropdown .highlight {
+            background: transparent;
+            color: inherit;
+        }
+        /* List looks like native Office <select>: one line per row, panel grows with longest label */
+        .signup-suboffice-wrap .ts-dropdown {
+            min-width: 100% !important;
+            width: max-content !important;
+            max-width: calc(100vw - 2rem) !important;
+            box-shadow: none;
+            border: 1px solid var(--bs-border-color);
+            border-radius: var(--bs-border-radius);
+        }
+        .signup-suboffice-wrap .ts-dropdown-content {
+            overflow-x: auto;
+        }
+        .signup-suboffice-wrap .ts-dropdown .option {
+            white-space: nowrap;
+        }
+        /* Highlighted row: solid gray bar + white text (like the Office dropdown) */
+        .signup-suboffice-wrap .ts-dropdown .option.active,
+        .signup-suboffice-wrap .ts-dropdown [data-selectable].option:hover {
+            background-color: #6c757d !important;
+            color: #fff !important;
+        }
+        .signup-suboffice-wrap .ts-dropdown .option.active .highlight,
+        .signup-suboffice-wrap .ts-dropdown [data-selectable].option:hover .highlight {
+            color: inherit !important;
+        }
+    </style>
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3" role="alert"></div>
+                <form method="post" asp-controller="Signup" asp-action="Signup">
+                    <div class="mb-3">
+                        <label class="form-label" asp-for="Name"></label>
+                        <input class="form-control" asp-for="Name" autocomplete="name" />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" asp-for="Email"></label>
+                        <input class="form-control" asp-for="Email" autocomplete="email" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label" asp-for="SignupOfficeId"></label>
+                            <select class="form-select" asp-for="SignupOfficeId" aria-label="Office">
+                                <option value="">Select office…</option>
+                                @foreach (var office in Model.OfficeOptions)
+                                {
+                                    <option value="@office.Id">@office.Name</option>
+                                }
+                            </select>
+                            <span asp-validation-for="SignupOfficeId" class="text-danger small d-block"></span>
+                        </div>
+                        <div class="col-sm-6 signup-suboffice-wrap">
+                            <label class="form-label" asp-for="SignupSubOfficeId"></label>
+                            <select class="form-select" asp-for="SignupSubOfficeId" aria-label="Sub office" data-placeholder="Search or select sub office…">
+                                <option value=""></option>
+                            </select>
+                            <span asp-validation-for="SignupSubOfficeId" class="text-danger small d-block"></span>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label" asp-for="Password"></label>
+                            <input class="form-control" asp-for="Password" autocomplete="new-password" />
+                            <div class="form-text text-danger small d-none" id="password-hint" aria-live="polite">At least 8 characters.</div>
+                            <span asp-validation-for="Password" class="text-danger small d-block"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label" asp-for="Confirm"></label>
+                            <input class="form-control" asp-for="Confirm" autocomplete="new-password" />
+                            <span asp-validation-for="Confirm" class="text-danger small"></span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Create account</button>
+                </form>
+                <p class="small text-muted mt-3 mb-0">
+                    Already have an account?
+                    <a asp-controller="Login" asp-action="Login">Log in</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js" crossorigin="anonymous"></script>
+    <script>
+        (function () {
+            var pwd = document.getElementById('Password');
+            var hint = document.getElementById('password-hint');
+            if (pwd && hint) {
+                pwd.addEventListener('input', function () {
+                    var len = pwd.value.length;
+                    var hideHint = len === 0 || len >= 8;
+                    hint.classList.toggle('d-none', hideHint);
+                });
+            }
+        })();
+        (function () {
+            var root = document.getElementById('SignupOfficeId');
+            var sub = document.getElementById('SignupSubOfficeId');
+            var subOffices = @Html.Raw(Model.SubOfficesJson);
+            if (!root || !sub || !Array.isArray(subOffices)) return;
+
+            var restoreSubId = '@(Model.SignupSubOfficeId?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty)';
+            var placeholder = sub.getAttribute('data-placeholder') || 'Search or select sub office…';
+            var subTomSelect = null;
+
+            function destroySubTomSelect() {
+                if (subTomSelect) {
+                    subTomSelect.destroy();
+                    subTomSelect = null;
+                }
+            }
+
+            function initSubTomSelect() {
+                subTomSelect = new TomSelect(sub, {
+                    class: 'form-select',
+                    create: false,
+                    allowEmptyOption: true,
+                    placeholder: placeholder,
+                    sortField: { field: 'text', direction: 'asc' },
+                    maxOptions: null,
+                    openOnFocus: true
+                });
+            }
+
+            function refillSub() {
+                destroySubTomSelect();
+                var pid = root.value;
+                while (sub.options.length > 1) {
+                    sub.remove(1);
+                }
+                if (!pid) {
+                    sub.selectedIndex = 0;
+                    initSubTomSelect();
+                    return;
+                }
+                var parentOfficeId = parseInt(pid, 10);
+                subOffices.filter(function (x) {
+                    return Number(x.parentOfficeId) === parentOfficeId;
+                })
+                    .forEach(function (x) {
+                        var opt = document.createElement('option');
+                        opt.value = String(x.officeId);
+                        opt.textContent = x.name;
+                        sub.appendChild(opt);
+                    });
+                if (restoreSubId) {
+                    sub.value = restoreSubId;
+                    if (sub.value !== restoreSubId) {
+                        sub.selectedIndex = 0;
+                    }
+                }
+                initSubTomSelect();
+            }
+
+            root.addEventListener('change', function () {
+                restoreSubId = '';
+                refillSub();
+            });
+            refillSub();
+        })();
+    </script>
+}

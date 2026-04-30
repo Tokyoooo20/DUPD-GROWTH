@@ -1,0 +1,263 @@
+@* Sidebar collapse + PAP edit modal (supports optional Priority No. via .dashboard-pap-table--priority-col). *@
+@{
+    var dashboardSidebarStartCollapsed = ViewData["DashboardSidebarStartCollapsed"] as bool? == true;
+}
+<script>
+    (function () {
+        var shell = document.getElementById('dashboardDetailSidebarShell');
+        var toggleBtn = document.getElementById('dashboardSidebarToggle');
+        if (!shell || !toggleBtn || typeof bootstrap === 'undefined') return;
+
+        var startCollapsed = @dashboardSidebarStartCollapsed.ToString().ToLowerInvariant();
+        var storageKey = 'dashboardDetailSidebarCollapsed';
+        var sidebarTooltips = [];
+
+        function getSidebarTooltipTargets() {
+            return shell.querySelectorAll('.app-sidebar-link, .app-sidebar-brand, .app-sidebar-project-chevron-btn');
+        }
+
+        function disposeSidebarTooltips() {
+            sidebarTooltips.forEach(function (t) {
+                try { t.dispose(); } catch (e) { /* noop */ }
+            });
+            sidebarTooltips = [];
+        }
+
+        function tooltipTitleFor(el) {
+            if (el.classList.contains('app-sidebar-project-chevron-btn')) {
+                var t = el.getAttribute('title');
+                return t && t.trim() ? t.trim() : 'Project pages';
+            }
+            if (el.classList.contains('app-sidebar-brand')) {
+                var titleEl = el.querySelector('.app-sidebar-title');
+                var sub = el.querySelector('.app-sidebar-subtitle');
+                var name = titleEl ? titleEl.textContent.trim() : '';
+                var line2 = sub ? sub.textContent.trim() : '';
+                return line2 ? name + ' — ' + line2 : name || 'Account';
+            }
+            var label = el.querySelector('.app-sidebar-link-label');
+            return label ? label.textContent.trim() : '';
+        }
+
+        function syncSidebarTooltips(collapsed) {
+            disposeSidebarTooltips();
+            if (!collapsed) return;
+            getSidebarTooltipTargets().forEach(function (el) {
+                var text = tooltipTitleFor(el);
+                if (!text) return;
+                var tip = new bootstrap.Tooltip(el, {
+                    placement: 'right',
+                    trigger: 'hover focus',
+                    container: 'body',
+                    title: text
+                });
+                sidebarTooltips.push(tip);
+            });
+        }
+
+        var toggleIcon = toggleBtn.querySelector('.dashboard-sidebar-toggle-icon');
+
+        function setCollapsed(collapsed, persist) {
+            shell.classList.toggle('is-collapsed', collapsed);
+            toggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            toggleBtn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+            if (toggleIcon) {
+                toggleIcon.className = 'bi ' + (collapsed ? 'bi-layout-sidebar-inset' : 'bi-layout-sidebar-inset-reverse') + ' dashboard-sidebar-toggle-icon';
+                toggleIcon.setAttribute('aria-hidden', 'true');
+            }
+            var existingTip = bootstrap.Tooltip.getInstance(toggleBtn);
+            if (existingTip) existingTip.dispose();
+            new bootstrap.Tooltip(toggleBtn, {
+                placement: 'left',
+                trigger: 'hover focus',
+                container: 'body',
+                title: toggleBtn.title
+            });
+            syncSidebarTooltips(collapsed);
+            if (persist) {
+                try { localStorage.setItem(storageKey, collapsed ? '1' : '0'); } catch (e) { /* noop */ }
+            }
+        }
+
+        try {
+            if (startCollapsed) {
+                setCollapsed(true, false);
+            } else if (localStorage.getItem(storageKey) === '1') {
+                setCollapsed(true, false);
+            } else {
+                setCollapsed(false, false);
+            }
+        } catch (e) {
+            setCollapsed(startCollapsed, false);
+        }
+
+        toggleBtn.addEventListener('click', function () {
+            setCollapsed(!shell.classList.contains('is-collapsed'), true);
+        });
+    })();
+</script>
+<script>
+    (function () {
+        var table = document.getElementById('papDetailTable');
+        var modalEl = document.getElementById('papEditModal');
+        var saveBtn = document.getElementById('papEditModalSave');
+        if (!table || typeof bootstrap === 'undefined') return;
+
+        function syncPapEllipsisTooltips(root) {
+            if (!root) return;
+            root.querySelectorAll('input.dashboard-pap-text-input--ellipsis').forEach(function (el) {
+                el.setAttribute('title', el.value);
+            });
+            root.querySelectorAll('select.dashboard-pap-select').forEach(function (sel) {
+                var opt = sel.options[sel.selectedIndex];
+                sel.setAttribute('title', opt ? (opt.text || opt.value).trim() : '');
+            });
+        }
+
+        syncPapEllipsisTooltips(table);
+        table.addEventListener('input', function (e) {
+            if (e.target && e.target.classList && e.target.classList.contains('dashboard-pap-text-input--ellipsis')) {
+                e.target.setAttribute('title', e.target.value);
+            }
+        });
+        table.addEventListener('change', function (e) {
+            if (e.target && e.target.tagName === 'SELECT' && e.target.classList.contains('dashboard-pap-select')) {
+                var opt = e.target.options[e.target.selectedIndex];
+                e.target.setAttribute('title', opt ? (opt.text || opt.value).trim() : '');
+            }
+        });
+
+        if (!modalEl || !saveBtn) return;
+
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        var currentEditRow = null;
+
+        var elTimeStart = document.getElementById('papEditModalTimeStart');
+        var elTimeEnd = document.getElementById('papEditModalTimeEnd');
+        var elGrowth = document.getElementById('papEditModalGrowth');
+        var elAchieve = document.getElementById('papEditModalAchieve');
+        var elQ1 = document.getElementById('papEditModalQ1');
+        var elQ2 = document.getElementById('papEditModalQ2');
+        var elQ3 = document.getElementById('papEditModalQ3');
+        var elQ4 = document.getElementById('papEditModalQ4');
+        var elRemarks = document.getElementById('papEditModalRemarks');
+
+        var MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        function setSelectValue(sel, value) {
+            if (!sel || value == null) return;
+            var v = String(value).trim();
+            for (var i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value === v) {
+                    sel.selectedIndex = i;
+                    return;
+                }
+            }
+        }
+
+        function parseMonthFromCell(str) {
+            if (!str || typeof str !== 'string') return '';
+            var s = str.trim();
+            if (!s) return '';
+            var token = s.split(/\s+/)[0].toLowerCase();
+            var map3 = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+            if (token.length >= 3) {
+                var key = token.substring(0, 3);
+                if (map3[key] !== undefined) return String(map3[key]);
+            }
+            var full = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+            for (var i = 0; i < full.length; i++) {
+                if (token === full[i]) return String(i + 1);
+            }
+            return '';
+        }
+
+        function formatMonthYearForCell(monthNumStr, yearStr) {
+            var n = parseInt(monthNumStr, 10);
+            var y = parseInt(yearStr, 10);
+            if (isNaN(n) || n < 1 || n > 12) return '';
+            if (isNaN(y) || y < 1900) y = new Date().getFullYear();
+            return MONTH_SHORT[n - 1] + ' ' + y;
+        }
+
+        function getReportYear() {
+            var y = table.getAttribute('data-report-year');
+            var n = parseInt(y, 10);
+            return isNaN(n) ? new Date().getFullYear() : n;
+        }
+
+        function fillModalFromRow(tr) {
+            if (!tr) return;
+            var tds = tr.querySelectorAll('td');
+            var colOffset = table.classList.contains('dashboard-pap-table--priority-col') ? 1 : 0;
+            if (tds.length < 15 + colOffset) return;
+            var inpStart = tds[3 + colOffset].querySelector('input');
+            var inpEnd = tds[4 + colOffset].querySelector('input');
+            var selGrowth = tds[6 + colOffset].querySelector('select');
+            var selAchieve = tds[7 + colOffset].querySelector('select');
+            var selQ1 = tds[9 + colOffset].querySelector('select');
+            var selQ2 = tds[10 + colOffset].querySelector('select');
+            var selQ3 = tds[11 + colOffset].querySelector('select');
+            var selQ4 = tds[12 + colOffset].querySelector('select');
+            var inpRemarks = tds[13 + colOffset].querySelector('input, textarea');
+            if (elTimeStart && inpStart) setSelectValue(elTimeStart, parseMonthFromCell(inpStart.value));
+            if (elTimeEnd && inpEnd) setSelectValue(elTimeEnd, parseMonthFromCell(inpEnd.value));
+            if (elGrowth && selGrowth) setSelectValue(elGrowth, selGrowth.value);
+            if (elAchieve && selAchieve) setSelectValue(elAchieve, selAchieve.value);
+            if (elQ1 && selQ1) setSelectValue(elQ1, selQ1.value);
+            if (elQ2 && selQ2) setSelectValue(elQ2, selQ2.value);
+            if (elQ3 && selQ3) setSelectValue(elQ3, selQ3.value);
+            if (elQ4 && selQ4) setSelectValue(elQ4, selQ4.value);
+            if (elRemarks && inpRemarks) elRemarks.value = inpRemarks.value;
+        }
+
+        function applyModalToRow(tr) {
+            if (!tr) return;
+            var tds = tr.querySelectorAll('td');
+            var colOffset = table.classList.contains('dashboard-pap-table--priority-col') ? 1 : 0;
+            if (tds.length < 15 + colOffset) return;
+            var inpStart = tds[3 + colOffset].querySelector('input');
+            var inpEnd = tds[4 + colOffset].querySelector('input');
+            var selGrowth = tds[6 + colOffset].querySelector('select');
+            var selAchieve = tds[7 + colOffset].querySelector('select');
+            var selQ1 = tds[9 + colOffset].querySelector('select');
+            var selQ2 = tds[10 + colOffset].querySelector('select');
+            var selQ3 = tds[11 + colOffset].querySelector('select');
+            var selQ4 = tds[12 + colOffset].querySelector('select');
+            var inpRemarks = tds[13 + colOffset].querySelector('input, textarea');
+            var year = String(getReportYear());
+            if (inpStart && elTimeStart) {
+                var ms = elTimeStart.value;
+                inpStart.value = ms ? formatMonthYearForCell(ms, year) : '';
+            }
+            if (inpEnd && elTimeEnd) {
+                var me = elTimeEnd.value;
+                inpEnd.value = me ? formatMonthYearForCell(me, year) : '';
+            }
+            if (selGrowth && elGrowth) setSelectValue(selGrowth, elGrowth.value);
+            if (selAchieve && elAchieve) setSelectValue(selAchieve, elAchieve.value);
+            if (selQ1 && elQ1) setSelectValue(selQ1, elQ1.value);
+            if (selQ2 && elQ2) setSelectValue(selQ2, elQ2.value);
+            if (selQ3 && elQ3) setSelectValue(selQ3, elQ3.value);
+            if (selQ4 && elQ4) setSelectValue(selQ4, elQ4.value);
+            if (inpRemarks && elRemarks) inpRemarks.value = elRemarks.value;
+            syncPapEllipsisTooltips(tr);
+        }
+
+        document.querySelectorAll('[data-pap-edit-trigger]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                currentEditRow = btn.closest('tr');
+                fillModalFromRow(currentEditRow);
+                modal.show();
+            });
+        });
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function () {
+                if (!currentEditRow) return;
+                applyModalToRow(currentEditRow);
+                modal.hide();
+            });
+        }
+    })();
+</script>

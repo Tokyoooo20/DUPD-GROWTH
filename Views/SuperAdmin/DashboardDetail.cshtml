@@ -1,0 +1,12 @@
+@model DupdGrowth.Web.Models.DashboardDetailViewModel
+@{
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/SuperAdmin/superadmin-dashboard.css" asp-append-version="true" />
+}
+@await Html.PartialAsync("_DashboardDetailPageBody", Model)
+@section Scripts {
+    <script src="~/js/dashboard-charts.js" asp-append-version="true"></script>
+    @await Html.PartialAsync("_DashboardPapDetailPageScripts")
+}
