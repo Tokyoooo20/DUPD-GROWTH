@@ -1,15 +1,15 @@
 @{
     var active = (ViewData["SidebarActive"] as string)?.ToLowerInvariant();
-    var displayName = ViewData["SidebarUserName"] as string ?? "Sample User";
+    var displayName = User.Identity?.IsAuthenticated == true ? User.Identity.Name : (ViewData["SidebarUserName"] as string ?? "Sample User");
+    var officeName = User.FindFirst("OfficeName")?.Value ?? "Sample Office";
     var projectSubmenuOpen = active is "project" or "createnew" or "dropped" or "completed" or "draft";
 }
 
 <aside class="app-sidebar">
-    <div class="app-sidebar-brand" aria-label="Signed in as @displayName">
+    <div class="app-sidebar-brand" aria-label="Signed in as @officeName">
         <i class="bi bi-person-circle app-sidebar-logo-mark" aria-hidden="true"></i>
         <div class="app-sidebar-brand-text">
-            <span class="app-sidebar-title">@displayName</span>
-            <span class="app-sidebar-subtitle">Signed in</span>
+            <span class="app-sidebar-title" style="white-space: normal; line-height: 1.2; display: block;">@officeName</span>
         </div>
     </div>
     <div class="app-sidebar-scroll">
