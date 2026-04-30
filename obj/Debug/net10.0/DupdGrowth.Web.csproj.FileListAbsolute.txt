@@ -2343,3 +2343,4 @@ C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\7v0ka3t5mk-{0}-7nghdnj7uw-7nghdnj7
 C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\l12ro3e3os-{0}-e6o6tv0u7v-e6o6tv0u7v.gz
 C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\ps4yx1gjzy-{0}-tv47djy5ny-tv47djy5ny.gz
 C:\DUPD - GROWTH\obj\Debug\net10.0\ref\DupdGrowth.Web.dll
+C:\DUPD - GROWTH\obj\Debug\net10.0\DupdGrowth.Web.sourcelink.json

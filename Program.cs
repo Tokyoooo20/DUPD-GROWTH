@@ -67,26 +67,47 @@ await using (var scope = app.Services.CreateAsyncScope())
     try
     {
         await db.Database.ExecuteSqlRawAsync(@"
-            CREATE TABLE IF NOT EXISTS `paps` (
-                `pap_id` INT NOT NULL AUTO_INCREMENT,
+            CREATE TABLE IF NOT EXISTS `projects` (
+                `id` INT NOT NULL AUTO_INCREMENT,
                 `priority_no` INT NOT NULL,
-                `pap_name` VARCHAR(200) NOT NULL,
+                `paps` VARCHAR(200) NOT NULL,
                 `responsible_person` VARCHAR(200) NOT NULL,
                 `budget` DECIMAL(18,2) NOT NULL,
-                `time_frame_start` INT NOT NULL,
-                `time_frame_end` INT NOT NULL,
-                `support_office` VARCHAR(100) NOT NULL,
-                `alignment_growth` VARCHAR(100) NULL,
-                `alignment_achieve` VARCHAR(200) NULL,
+                `month_start` VARCHAR(50) NOT NULL,
+                `month_end` VARCHAR(50) NOT NULL,
+                `units` VARCHAR(100) NULL,
+                `growth` VARCHAR(100) NULL,
+                `achieve` VARCHAR(200) NULL,
                 `remarks_type` VARCHAR(50) NOT NULL,
-                `remarks_type_other` VARCHAR(200) NULL,
                 `remarks` VARCHAR(2000) NULL,
-                `status` VARCHAR(50) NOT NULL,
-                `created_by_user_id` INT NOT NULL,
-                `created_at` DATETIME(6) NOT NULL,
-                PRIMARY KEY (`pap_id`),
-                INDEX `IX_paps_created_by_user_id` (`created_by_user_id`)
+                `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                `office_id` INT NULL DEFAULT 0,
+                `parent_id` INT NULL DEFAULT 0,
+                PRIMARY KEY (`id`)
             ) CHARACTER SET utf8mb4;");
+
+        // Ensure missing columns are added to an existing 'projects' table
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `projects` ADD COLUMN `office_id` INT NULL DEFAULT 0;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `projects` ADD COLUMN `parent_id` INT NULL DEFAULT 0;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `projects` ADD COLUMN `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6);");
+        }
+        catch (MySqlException ex) when (ex.Number == 1060 || ex.Number == 1061)
+        {
+            // 1060: Duplicate column name
+            // 1061: Duplicate key name
+        }
+
+        // Force growth and achieve to be VARCHAR to fix Incorrect decimal value errors from old schemas
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `projects` MODIFY COLUMN `growth` VARCHAR(100) NULL;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `projects` MODIFY COLUMN `achieve` VARCHAR(200) NULL;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `projects` MODIFY COLUMN `month_start` VARCHAR(50) NOT NULL;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE `projects` MODIFY COLUMN `month_end` VARCHAR(50) NOT NULL;");
+        }
+        catch { }
     }
     catch { }
 }

@@ -81,25 +81,28 @@ public class ClientController : Controller
         if (userId is null)
             return Unauthorized(new { success = false, errors = new[] { "User not authenticated." } });
 
-        var pap = new Pap
+        var currentUser = await _db.Users.FindAsync(userId.Value);
+        if (currentUser == null)
+            return Unauthorized(new { success = false, errors = new[] { "User not found in database." } });
+
+        var project = new Project
         {
             PriorityNo = request.PriorityNo,
-            PapName = request.PapName,
+            Paps = request.PapName,
             ResponsiblePerson = request.ResponsiblePerson,
             Budget = request.Budget,
-            TimeFrameStart = request.TimeFrameStart,
-            TimeFrameEnd = request.TimeFrameEnd,
-            SupportOffice = request.SupportOffice,
-            AlignmentGrowth = request.AlignmentGrowth,
-            AlignmentAchieve = request.AlignmentAchieve,
-            RemarksType = request.RemarksType,
-            RemarksTypeOther = request.RemarksTypeOther,
+            TimeStart = request.TimeFrameStart,
+            TimeEnd = request.TimeFrameEnd,
+            Units = request.SupportOffice,
+            Growth = request.AlignmentGrowth,
+            Achieve = request.AlignmentAchieve,
+            RemarksType = request.RemarksType == "Others" && !string.IsNullOrWhiteSpace(request.RemarksTypeOther) ? request.RemarksTypeOther : request.RemarksType,
             Remarks = request.Remarks,
-            Status = "Endorsed",
-            CreatedByUserId = userId.Value
+            OfficeId = currentUser.OfficeId,
+            ParentId = currentUser.ParentOfficeId
         };
 
-        _db.Paps.Add(pap);
+        _db.Projects.Add(project);
         await _db.SaveChangesAsync();
 
         return Ok(new { success = true, message = "Project saved as endorsed." });

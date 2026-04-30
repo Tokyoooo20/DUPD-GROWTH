@@ -1,10 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
-using Models;
 using System;
 using System.Collections.Generic;
 
-namespace Models
+namespace DupdGrowth.Web.Models
 {
+    public class CreatePapRequest
+    {
+        public int PriorityNo { get; set; }
+        public string PapName { get; set; } = string.Empty;
+        public string ResponsiblePerson { get; set; } = string.Empty;
+        public decimal Budget { get; set; }
+        public string TimeFrameStart { get; set; } = string.Empty;
+        public string TimeFrameEnd { get; set; } = string.Empty;
+        public string SupportOffice { get; set; } = string.Empty;
+        public string? AlignmentGrowth { get; set; }
+        public string? AlignmentAchieve { get; set; }
+        public string RemarksType { get; set; } = string.Empty;
+        public string? RemarksTypeOther { get; set; }
+        public string? Remarks { get; set; }
+    }
+
     public class Projects
     {
         public int Id { get; set; }
@@ -15,26 +30,5 @@ namespace Models
         public DateTime Deadline { get; set; }
         public List<string> Responsibilities { get; set; }
         public List<string> TeamMembers { get; set; }
-    }
-
-    public class MyDbContext
-    {
-        // Implementation of context
-    }
-
-    public class Controller
-    {
-        [HttpPost]
-        public IActionResult CreateNewProgram(Projects projects)
-        {
-            if (ModelState.IsValid)
-            {
-                MyDbContext db = new MyDbContext();
-                db.Projects.Add(projects);
-                db.SaveChanges();
-                return RedirectToAction("Index");
-            }
-            return View();
-        }
     }
 }

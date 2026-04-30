@@ -1,6 +1,6 @@
 @using DupdGrowth.Web.Models
 @{
-    var monthShort = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    var monthFull = new[] { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
     var showQuarterStatus = ViewData["UserReportAddProgramShowQuarterStatus"] as bool? ?? true;
     var createNewLayout = ViewData["UserReportAddProgramCreateNewLayout"] as bool? ?? false;
     var priCol = createNewLayout ? "col-12 col-md-6" : "col-12 col-md-4";
@@ -58,9 +58,9 @@
                 <label class="form-label small text-body-secondary mb-1" for="userAddPapTimeStart">Start</label>
                 <select id="userAddPapTimeStart" class="form-select" aria-label="Timeline start (month)">
                     <option value="">—</option>
-                    @for (var m = 1; m <= 12; m++)
+                    @foreach (var m in monthFull)
                     {
-                        <option value="@m">@monthShort[m - 1]</option>
+                        <option value="@m">@m</option>
                     }
                 </select>
             </div>
@@ -68,9 +68,9 @@
                 <label class="form-label small text-body-secondary mb-1" for="userAddPapTimeEnd">End</label>
                 <select id="userAddPapTimeEnd" class="form-select" aria-label="Timeline end (month)">
                     <option value="">—</option>
-                    @for (var m = 1; m <= 12; m++)
+                    @foreach (var m in monthFull)
                     {
-                        <option value="@m">@monthShort[m - 1]</option>
+                        <option value="@m">@m</option>
                     }
                 </select>
             </div>
