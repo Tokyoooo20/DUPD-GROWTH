@@ -79,14 +79,12 @@
 
     <div>
         <label for="userAddPapOrg" class="form-label fw-semibold">Support Offices/Units</label>
-        <select class="form-select" id="userAddPapOrg" aria-label="Support offices or units">
-            <option value="">Select support office / unit</option>
-            <option value="VPAA">VPAA</option>
-            <option value="VPRIE">VPRIE</option>
-            <option value="VPFA">VPFA</option>
-            <option value="VPGASO">VPGASO</option>
-            <option value="Chancellor">Chancellor</option>
-        </select>
+        <input type="text" 
+               class="form-control bg-light" 
+               id="userAddPapOrg" 
+               value="@(User.FindFirst("OfficeName")?.Value ?? "Sample Office")" 
+               readonly 
+               aria-label="Support offices or units" />
     </div>
 
     <div class="row g-3">
