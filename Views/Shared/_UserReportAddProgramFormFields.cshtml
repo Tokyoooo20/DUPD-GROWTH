@@ -130,16 +130,61 @@
                            aria-label="Specify when Others is selected" />
                 </div>
             </div>
-            <div class="col-12 col-md-6 d-flex flex-column">
-                <label for="userAddPapRemarks" class="form-label fw-semibold">Remarks</label>
-                <textarea id="userAddPapRemarks"
-                          class="form-control flex-grow-1"
-                          rows="6"
-                          spellcheck="true"
-                          autocomplete="off"
-                          placeholder="Enter remarks…"
-                          aria-label="Remarks"></textarea>
+            <div class="col-12 col-md-6">
+                @if (showQuarterStatus)
+                {
+                    <span class="form-label fw-semibold d-block mb-2">Status</span>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small text-body-secondary mb-0" for="userAddPapQ1">1st quarter</label>
+                            <select id="userAddPapQ1" class="form-select form-select-sm" aria-label="1st quarter status">
+                                @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                                {
+                                    <option value="@o">@o</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-body-secondary mb-0" for="userAddPapQ2">2nd quarter</label>
+                            <select id="userAddPapQ2" class="form-select form-select-sm" aria-label="2nd quarter status">
+                                @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                                {
+                                    <option value="@o">@o</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-body-secondary mb-0" for="userAddPapQ3">3rd quarter</label>
+                            <select id="userAddPapQ3" class="form-select form-select-sm" aria-label="3rd quarter status">
+                                @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                                {
+                                    <option value="@o">@o</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-body-secondary mb-0" for="userAddPapQ4">4th quarter</label>
+                            <select id="userAddPapQ4" class="form-select form-select-sm" aria-label="4th quarter status">
+                                @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                                {
+                                    <option value="@o">@o</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                }
             </div>
+        </div>
+
+        <div class="mt-2">
+            <label for="userAddPapRemarks" class="form-label fw-semibold">Remarks</label>
+            <textarea id="userAddPapRemarks"
+                      class="form-control"
+                      rows="4"
+                      spellcheck="true"
+                      autocomplete="off"
+                      placeholder="Enter remarks…"
+                      aria-label="Remarks"></textarea>
         </div>
     }
     else

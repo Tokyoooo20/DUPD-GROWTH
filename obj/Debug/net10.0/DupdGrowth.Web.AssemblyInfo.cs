@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DupdGrowth.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4cd59097a44b9694e40e1452ebdf566ea7c9d1ac")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+17859b0e192d56586be7a14a493cf0aaee38f733")]
 [assembly: System.Reflection.AssemblyProductAttribute("DupdGrowth.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DupdGrowth.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

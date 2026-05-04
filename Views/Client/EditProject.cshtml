@@ -164,19 +164,50 @@
                 },
                 body: JSON.stringify(payload)
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.href = '/Pages/User/Project';
+            .then(function (res) {
+                return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+            })
+            .then(function (result) {
+                if (result.ok && result.data.success) {
+                    showEditToast('Project updated successfully!', 'success');
+                    setTimeout(function () {
+                        window.location.href = '/Pages/User/Project';
+                    }, 1500);
                 } else {
-                    alert('Error: ' + (data.errors ? data.errors.join('\n') : data.message));
+                    var errors = (result.data.errors || []).join('\n');
+                    showEditToast(errors || 'Update failed. Please try again.', 'error');
                 }
             })
-            .catch(error => {
+            .catch(function (error) {
                 console.error('Error:', error);
-                alert('An unexpected error occurred.');
+                showEditToast('An unexpected error occurred.', 'error');
             });
         });
+
+        function showEditToast(message, type) {
+            var existing = document.getElementById('editProjectToast');
+            if (existing) existing.remove();
+
+            var toastEl = document.createElement('div');
+            toastEl.id = 'editProjectToast';
+            toastEl.setAttribute('role', 'alert');
+            toastEl.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;min-width:280px;max-width:400px;padding:14px 20px;border-radius:8px;font-size:14px;font-weight:500;color:#fff;opacity:0;transition:opacity 0.3s;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+            toastEl.textContent = message;
+
+            if (type === 'success') {
+                toastEl.style.backgroundColor = '#198754'; // Bootstrap Success Green
+            } else {
+                toastEl.style.backgroundColor = '#dc3545'; // Bootstrap Danger Red
+            }
+
+            document.body.appendChild(toastEl);
+            requestAnimationFrame(function () { toastEl.style.opacity = '1'; });
+
+            setTimeout(function () {
+                toastEl.style.opacity = '0';
+                setTimeout(function () { toastEl.remove(); }, 300);
+            }, 2500);
+        }
 
         document.getElementById('editCancelBtn').addEventListener('click', function() {
             var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editCancelConfirmModal'));
