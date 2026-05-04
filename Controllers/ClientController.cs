@@ -58,95 +58,12 @@ public class ClientController : Controller
     [HttpGet("User/Project/{segment?}")]
     public async Task<IActionResult> UserProject(string? segment, int page = 1, int? year = null, string? growth = null)
     {
-        var userId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : (int?)null;
-        if (userId is null) return Unauthorized();
-
-        var currentUser = await _db.Users.FindAsync(userId.Value);
-        if (currentUser == null) return Unauthorized();
-
         var seg = string.IsNullOrWhiteSpace(segment) ? DashboardSegments.Total : segment;
+        var vm = await GetProjectFilteredViewModel("project", "Project", nameof(UserProject), page, year, growth, seg);
         
-        // Fetch real data from projects table
-        var query = _db.Projects.AsQueryable();
-
-        // Filter by user's office/parent
-        if (currentUser.OfficeId.HasValue)
-        {
-            query = query.Where(p => p.OfficeId == currentUser.OfficeId || p.ParentId == currentUser.OfficeId);
-        }
-
-        // Apply filters
-        if (!string.IsNullOrWhiteSpace(growth))
-        {
-            query = query.Where(p => p.Growth == growth);
-        }
-
-        // Segment filtering (if applicable, currently projects don't have a status field like 'Completed')
-        // For now, we'll just show all projects in 'Total' and empty for others, 
-        // or we can implement a simple logic if we add a Status field to Project model.
-        if (seg != DashboardSegments.Total)
-        {
-            // If we had a Status column in Project, we would filter here.
-            // For now, let's just return all for Total and empty for others to avoid confusion.
-            if (seg == DashboardSegments.Completed) query = query.Where(p => false); 
-            else if (seg == DashboardSegments.Ongoing) query = query.Where(p => false);
-            else if (seg == DashboardSegments.NotStarted) query = query.Where(p => false);
-        }
-
-        var totalCount = await query.CountAsync();
-        var pageSize = 10;
-        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-        if (page < 1) page = 1;
-        if (totalPages > 0 && page > totalPages) page = totalPages;
-
-        var projects = await query
-            .OrderBy(p => p.PriorityNo)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        var rows = projects.Select(p => new DashboardPapRow
-        {
-            Id = p.Id,
-            Name = p.Paps,
-            ResponsiblePerson = p.ResponsiblePerson,
-            BudgetAllocation = p.Budget.ToString("C0", new System.Globalization.CultureInfo("en-PH")),
-            TimeFrameStart = p.TimeStart,
-            TimeFrameEnd = p.TimeEnd,
-            SupportOfficesUnits = p.Units ?? "",
-            AlignmentGrowth = p.Growth ?? "N/A",
-            AlignmentAchieve = p.Achieve ?? "N/A",
-            RemarksContinuingNew = p.RemarksType,
-            StatusQ1 = p.StatusQ1 ?? "",
-            StatusQ2 = p.StatusQ2 ?? "",
-            StatusQ3 = p.StatusQ3 ?? "",
-            StatusQ4 = p.StatusQ4 ?? "",
-            Remarks = p.Remarks ?? "",
-            Status = p.ProjectStatus ?? "Ongoing"
-        }).ToList();
-
-        var vm = new DashboardDetailViewModel
-        {
-            Kpi = new DashboardKpiStripViewModel
-            {
-                ActiveSegment = seg.ToLowerInvariant(),
-                TotalPapsValue = totalCount,
-                CompletedPercent = "0%", // We don't have this data yet
-                OngoingPercent = "100%",
-                NotStartedPercent = "0%"
-            },
-            Rows = rows,
-            TableSubtitle = seg == DashboardSegments.Total ? "All Projects" : $"{seg} Projects",
-            SelectedYear = year ?? 2026,
-            GrowthFilter = growth,
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount
-        };
-
         ViewData["NavbarSelectedYear"] = vm.SelectedYear;
         ViewData["NavbarYears"] = DashboardPapDetailPage.YearOptions;
-        ViewData["NavbarSegment"] = vm.Kpi.ActiveSegment;
+        ViewData["NavbarSegment"] = seg.ToLowerInvariant();
         ViewData["NavbarPage"] = page;
 
         ViewData["SidebarActive"] = "project";
@@ -277,6 +194,36 @@ public class ClientController : Controller
         return Ok(new { success = true, message = "Project saved as endorsed." });
     }
 
+    [HttpPost("User/Drop/{id}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DropProject(int id)
+    {
+        var project = await _db.Projects.FindAsync(id);
+        if (project == null) return NotFound(new { success = false, message = "Project not found." });
+
+        project.ProjectStatus = "dropped";
+        project.DroppedAt = DateTime.Now;
+        project.UpdatedAt = DateTime.Now;
+
+        _db.Projects.Update(project);
+        await _db.SaveChangesAsync();
+
+        return Ok(new { success = true, message = "Project dropped successfully." });
+    }
+
+    [HttpPost("User/Cancel/{id}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelProject(int id)
+    {
+        var project = await _db.Projects.FindAsync(id);
+        if (project == null) return NotFound(new { success = false, message = "Project not found." });
+
+        _db.Projects.Remove(project);
+        await _db.SaveChangesAsync();
+
+        return Ok(new { success = true, message = "Project cancelled and removed successfully." });
+    }
+
     [HttpGet("User/Drop")]
     public IActionResult UserDrop() => RedirectToAction(nameof(UserDropped));
 
@@ -301,7 +248,7 @@ public class ClientController : Controller
         return View("~/Views/Client/Draft.cshtml", vm);
     }
 
-    private async Task<DashboardDetailViewModel> GetProjectFilteredViewModel(string sidebarActive, string title, string actionName, int page, int? year, string? growth)
+    private async Task<DashboardDetailViewModel> GetProjectFilteredViewModel(string sidebarActive, string title, string actionName, int page, int? year, string? growth, string? segment = null)
     {
         var userId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : (int?)null;
         var currentUser = userId.HasValue ? await _db.Users.FindAsync(userId.Value) : null;
@@ -321,17 +268,28 @@ public class ClientController : Controller
         // Filter by the sidebar category
         if (sidebarActive == "draft")
         {
-            query = query.Where(p => p.Remarks == "Draft");
+            query = query.Where(p => p.ProjectStatus == "draft");
         }
         else if (sidebarActive == "dropped")
         {
-            // If we had a dropped status, we would filter here.
-            query = query.Where(p => false); 
+            query = query.Where(p => p.ProjectStatus == "dropped");
         }
         else if (sidebarActive == "completed")
         {
             // If we had a completed status, we would filter here.
             query = query.Where(p => false);
+        }
+        else
+        {
+            // Default: Project list (show everything NOT dropped or draft)
+            query = query.Where(p => p.ProjectStatus != "dropped" && p.ProjectStatus != "draft");
+        }
+
+        // Segment filtering (if provided)
+        if (!string.IsNullOrWhiteSpace(segment) && segment != DashboardSegments.Total)
+        {
+            // Add custom segment logic here if needed (e.g. by a Status column)
+            // For now we keep it simple as requested.
         }
 
         var totalCount = await query.CountAsync();
@@ -344,6 +302,7 @@ public class ClientController : Controller
 
         var rows = projects.Select(p => new DashboardPapRow
         {
+            Id = p.Id,
             Name = p.Paps,
             ResponsiblePerson = p.ResponsiblePerson,
             BudgetAllocation = p.Budget.ToString("C0", new System.Globalization.CultureInfo("en-PH")),
@@ -353,22 +312,22 @@ public class ClientController : Controller
             AlignmentGrowth = p.Growth ?? "N/A",
             AlignmentAchieve = p.Achieve ?? "N/A",
             RemarksContinuingNew = p.RemarksType,
-            StatusQ1 = "To be Implemented",
-            StatusQ2 = "To be Implemented",
-            StatusQ3 = "To be Implemented",
-            StatusQ4 = "To be Implemented",
+            StatusQ1 = p.StatusQ1 ?? "",
+            StatusQ2 = p.StatusQ2 ?? "",
+            StatusQ3 = p.StatusQ3 ?? "",
+            StatusQ4 = p.StatusQ4 ?? "",
             Remarks = p.Remarks ?? "",
-            Status = "Ongoing"
+            Status = p.ProjectStatus ?? "Ongoing"
         }).ToList();
 
         var vm = new DashboardDetailViewModel
         {
             Kpi = new DashboardKpiStripViewModel
             {
-                ActiveSegment = null,
+                ActiveSegment = segment?.ToLowerInvariant(),
                 TotalPapsValue = totalCount,
                 CompletedPercent = "0%",
-                OngoingPercent = "100%",
+                OngoingPercent = totalCount > 0 ? "100%" : "0%",
                 NotStartedPercent = "0%"
             },
             Rows = rows,

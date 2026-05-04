@@ -16,15 +16,16 @@
     <link rel="stylesheet" href="~/css/User/UserProject.css" asp-append-version="true" />
 }
 @await Html.PartialAsync("_DashboardDetailPageBody", Model)
+@Html.AntiForgeryToken()
 @await Html.PartialAsync("_UserReportAddProgramPanel")
 @{
     var userProjectDropModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
     {
         ["ModalId"] = "userProjectDropConfirmModal",
-        ["ModalTitle"] = "Drop this project?",
+        ["ModalTitle"] = "Move to Dropped?",
         ["ModalSize"] = "modal-sm",
-        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to drop this project?</p>",
-        ["ModalPrimaryText"] = "Drop",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to move this project to Dropped?</p>",
+        ["ModalPrimaryText"] = "Dropped",
         ["ModalPrimaryButtonId"] = "userProjectDropConfirmBtn",
         ["ModalPrimaryDismiss"] = false,
         ["ModalSecondaryText"] = "Cancel",
@@ -32,10 +33,10 @@
     var userProjectEditModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
     {
         ["ModalId"] = "userProjectEditConfirmModal",
-        ["ModalTitle"] = "Edit this project?",
+        ["ModalTitle"] = "Endorse this project?",
         ["ModalSize"] = "modal-sm",
-        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to edit this project?</p>",
-        ["ModalPrimaryText"] = "Yes, Edit",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to endorse/edit this project?</p>",
+        ["ModalPrimaryText"] = "Endorsed",
         ["ModalPrimaryButtonId"] = "userProjectEditConfirmBtn",
         ["ModalPrimaryDismiss"] = false,
         ["ModalSecondaryText"] = "Cancel",
@@ -91,12 +92,36 @@
 
             if (dropConfirmBtn) {
                 dropConfirmBtn.addEventListener('click', function () {
-                    if (pendingDropRow && pendingDropRow.parentNode) {
-                        pendingDropRow.remove();
-                    }
-                    pendingDropRow = null;
-                    var inst = bootstrap.Modal.getInstance(dropModalEl);
-                    if (inst) inst.hide();
+                    if (!pendingDropRow) return;
+                    var id = pendingDropRow.querySelector('[data-pap-id]')?.getAttribute('data-pap-id');
+                    if (!id) return;
+
+                    fetch('/Pages/User/Drop/' + id, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        }
+                    })
+                    .then(function(res) { 
+                        return res.json().then(function(data) { return { ok: res.ok, data: data }; }); 
+                    })
+                    .then(function(result) {
+                        if (result.ok && result.data.success) {
+                            pendingDropRow.remove();
+                            pendingDropRow = null;
+                            var inst = bootstrap.Modal.getInstance(dropModalEl);
+                            if (inst) inst.hide();
+                            if (typeof showEditToast === 'function') {
+                                showEditToast('Project moved to Dropped successfully!', 'success');
+                            }
+                        } else {
+                            alert('Error: ' + (result.data?.message || 'Failed to drop project.'));
+                        }
+                    })
+                    .catch(function(err) {
+                        console.error('Drop error:', err);
+                        alert('An unexpected error occurred during the drop operation.');
+                    });
                 });
             }
 
@@ -118,5 +143,30 @@
                 pendingEditId = null;
             });
         })();
+
+        function showEditToast(message, type) {
+            var existing = document.getElementById('projectActionToast');
+            if (existing) existing.remove();
+
+            var toastEl = document.createElement('div');
+            toastEl.id = 'projectActionToast';
+            toastEl.setAttribute('role', 'alert');
+            toastEl.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;min-width:280px;max-width:400px;padding:14px 20px;border-radius:8px;font-size:14px;font-weight:500;color:#fff;opacity:0;transition:opacity 0.3s;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+            toastEl.textContent = message;
+
+            if (type === 'success') {
+                toastEl.style.backgroundColor = '#198754';
+            } else {
+                toastEl.style.backgroundColor = '#dc3545';
+            }
+
+            document.body.appendChild(toastEl);
+            requestAnimationFrame(function () { toastEl.style.opacity = '1'; });
+
+            setTimeout(function () {
+                toastEl.style.opacity = '0';
+                setTimeout(function () { toastEl.remove(); }, 300);
+            }, 2500);
+        }
     </script>
 }

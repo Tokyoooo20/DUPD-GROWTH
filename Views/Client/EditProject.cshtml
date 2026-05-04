@@ -1,7 +1,7 @@
 @model DupdGrowth.Web.Models.Project
 @{
     Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
-    ViewData["SidebarUserName"] = "Sample User";
+    ViewData["SidebarUserName"] = User.Identity?.Name ?? "Sample User";
     ViewData["ChartShowGrowthIndicator"] = false;
     ViewData["UserReportAddProgramShowQuarterStatus"] = true;
     ViewData["UserReportAddProgramCreateNewLayout"] = true;
@@ -33,8 +33,9 @@
                         <input type="hidden" id="editProjectId" value="@Model.Id" />
                         @await Html.PartialAsync("_UserReportAddProgramFormFields")
                         <div class="d-flex flex-wrap gap-2 justify-content-end border-top pt-3 mt-4">
-                            <button type="button" class="btn btn-outline-secondary" id="editCancelBtn">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="editSaveBtn">Save Changes</button>
+                            <button type="button" class="btn btn-outline-secondary px-4" id="editCancelBtn">Cancel</button>
+                            <button type="button" class="btn btn-outline-danger px-4" id="editDropBtn">Dropped</button>
+                            <button type="button" class="btn btn-primary px-4" id="editSaveBtn">Endorsed</button>
                         </div>
                     </form>
                 </div>
@@ -46,13 +47,24 @@
     var editSaveModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
     {
         ["ModalId"] = "editSaveConfirmModal",
-        ["ModalTitle"] = "Save changes?",
+        ["ModalTitle"] = "Endorse changes?",
         ["ModalSize"] = "modal-sm",
-        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to save the changes to this project?</p>",
-        ["ModalPrimaryText"] = "Save Changes",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to endorse the changes to this project?</p>",
+        ["ModalPrimaryText"] = "Endorsed",
         ["ModalPrimaryButtonId"] = "editSaveConfirmBtn",
         ["ModalPrimaryDismiss"] = false,
         ["ModalSecondaryText"] = "Close",
+    };
+    var editDropModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "editDropConfirmModal",
+        ["ModalTitle"] = "Move to Dropped?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to move this project to Dropped?</p>",
+        ["ModalPrimaryText"] = "Dropped",
+        ["ModalPrimaryButtonId"] = "editDropConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Cancel",
     };
     var editCancelModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
     {
@@ -67,6 +79,7 @@
     };
 }
 @await Html.PartialAsync("Modal", null, editSaveModal)
+@await Html.PartialAsync("Modal", null, editDropModal)
 @await Html.PartialAsync("Modal", null, editCancelModal)
 @section Scripts {
     @await Html.PartialAsync("_DashboardPapDetailPageScripts")
@@ -133,6 +146,39 @@
         document.getElementById('editSaveBtn').addEventListener('click', function() {
             var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editSaveConfirmModal'));
             modal.show();
+        });
+
+        // Edit Drop Logic
+        document.getElementById('editDropBtn').addEventListener('click', function() {
+            var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editDropConfirmModal'));
+            modal.show();
+        });
+
+        document.getElementById('editDropConfirmBtn').addEventListener('click', function() {
+            var id = document.getElementById('editProjectId').value;
+            fetch('/Pages/User/Drop/' + id, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(function (res) {
+                return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+            })
+            .then(function (result) {
+                if (result.ok && result.data.success) {
+                    showEditToast('Project moved to Dropped successfully!', 'success');
+                    setTimeout(function () {
+                        window.location.href = '/Pages/User/Project';
+                    }, 1500);
+                } else {
+                    showEditToast('Failed to drop project.', 'error');
+                }
+            })
+            .catch(function (error) {
+                console.error('Error:', error);
+                showEditToast('An unexpected error occurred.', 'error');
+            });
         });
 
         document.getElementById('editSaveConfirmBtn').addEventListener('click', function() {

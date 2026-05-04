@@ -1,7 +1,7 @@
 @model DupdGrowth.Web.Models.DashboardDetailViewModel
 @{
     Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
-    ViewData["SidebarUserName"] = "Sample User";
+    ViewData["SidebarUserName"] = User.Identity?.Name ?? "Sample User";
     ViewData["ChartShowGrowthIndicator"] = false;
 }
 @section Styles {
