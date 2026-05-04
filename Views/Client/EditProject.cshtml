@@ -1,0 +1,190 @@
+@model DupdGrowth.Web.Models.Project
+@{
+    Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
+    ViewData["SidebarUserName"] = "Sample User";
+    ViewData["ChartShowGrowthIndicator"] = false;
+    ViewData["UserReportAddProgramShowQuarterStatus"] = true;
+    ViewData["UserReportAddProgramCreateNewLayout"] = true;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/User/CreateNew.css" asp-append-version="true" />
+}
+<div class="app-shell d-flex">
+    @await Html.PartialAsync("_CollapsibleUserSidebarShell")
+    <div class="app-content d-flex flex-column flex-grow-1 min-w-0">
+        @await Html.PartialAsync("Navbar")
+        <main role="main" class="app-main flex-grow-1 bg-light">
+            <div class="container-fluid dashboard-page dashboard-page--tight px-3 px-sm-4 px-lg-5 py-4">
+                <header class="dashboard-page-header mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <a asp-controller="Client" asp-action="UserProject" class="btn btn-sm btn-outline-secondary border-0 px-2" aria-label="Back to projects">
+                            <i class="bi bi-arrow-left fs-5"></i>
+                        </a>
+                        <h1 class="dashboard-page-title mb-0">Edit Project</h1>
+                    </div>
+                    <p class="text-body-secondary small mb-0 ps-5">Update the details for your program or project.</p>
+                </header>
+                <div id="papTableCard" class="pap-table-card-wrap">
+                    <form id="editPapForm"
+                          class="dashboard-card__body p-3 p-md-4 bg-white"
+                          method="post"
+                          autocomplete="off">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="editProjectId" value="@Model.Id" />
+                        @await Html.PartialAsync("_UserReportAddProgramFormFields")
+                        <div class="d-flex flex-wrap gap-2 justify-content-end border-top pt-3 mt-4">
+                            <button type="button" class="btn btn-outline-secondary" id="editCancelBtn">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="editSaveBtn">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+@{
+    var editSaveModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "editSaveConfirmModal",
+        ["ModalTitle"] = "Save changes?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to save the changes to this project?</p>",
+        ["ModalPrimaryText"] = "Save Changes",
+        ["ModalPrimaryButtonId"] = "editSaveConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Close",
+    };
+    var editCancelModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "editCancelConfirmModal",
+        ["ModalTitle"] = "Discard changes?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">All changes you made will be lost.</p>",
+        ["ModalPrimaryText"] = "Discard",
+        ["ModalPrimaryButtonId"] = "editCancelConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Stay",
+    };
+}
+@await Html.PartialAsync("Modal", null, editSaveModal)
+@await Html.PartialAsync("Modal", null, editCancelModal)
+@section Scripts {
+    @await Html.PartialAsync("_DashboardPapDetailPageScripts")
+    @* We need a custom script for editing to pre-fill data *@
+    <script>
+        (function () {
+            // Pre-fill data from Model
+            document.getElementById('userAddPapPriorityNo').value = '@Model.PriorityNo';
+            document.getElementById('userAddPapName').value = '@Html.Raw(Model.Paps)';
+            document.getElementById('userAddPapResponsible').value = '@Html.Raw(Model.ResponsiblePerson)';
+            document.getElementById('userAddPapBudget').value = '@Model.Budget';
+            document.getElementById('userAddPapTimeStart').value = '@Model.TimeStart';
+            document.getElementById('userAddPapTimeEnd').value = '@Model.TimeEnd';
+            document.getElementById('userAddPapOrg').value = '@Html.Raw(Model.Units)';
+            document.getElementById('userAddPapGrowth').value = '@Model.Growth';
+            
+            // Fix Achieve mapping
+            var achieveVal = '@Html.Raw(Model.Achieve)';
+            var achieveSelect = document.getElementById('userAddPapAchieve');
+            if (achieveSelect) {
+                achieveSelect.value = achieveVal;
+            }
+            
+            // Handle RemarksType and RemarksTypeOther
+            var remarksType = '@Html.Raw(Model.RemarksType)';
+            var remarksSelect = document.getElementById('userAddPapRemarksContinuingType');
+            var remarksOtherInput = document.getElementById('userAddPapRemarksContinuingOther');
+            
+            var found = false;
+            for (var i = 0; i < remarksSelect.options.length; i++) {
+                if (remarksSelect.options[i].value === remarksType) {
+                    remarksSelect.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (!found && remarksType) {
+                remarksSelect.value = 'Others';
+                remarksOtherInput.value = remarksType;
+                // Show the "Others" input wrap and enable the input
+                var otherWrap = document.getElementById('userAddPapRemarksContinuingOtherWrap');
+                if (otherWrap) {
+                    otherWrap.classList.remove('d-none');
+                }
+                remarksOtherInput.disabled = false;
+            }
+            
+            document.getElementById('userAddPapRemarks').value = '@Html.Raw(Model.Remarks)';
+
+            // Pre-fill Quarters
+            document.getElementById('userAddPapQ1').value = '@Model.StatusQ1';
+            document.getElementById('userAddPapQ2').value = '@Model.StatusQ2';
+            document.getElementById('userAddPapQ3').value = '@Model.StatusQ3';
+            document.getElementById('userAddPapQ4').value = '@Model.StatusQ4';
+
+            // Sync UI
+            if (typeof syncRemarksContinuingNewUi === 'function') {
+                syncRemarksContinuingNewUi();
+            }
+        })();
+
+        // Edit Save Logic
+        document.getElementById('editSaveBtn').addEventListener('click', function() {
+            var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editSaveConfirmModal'));
+            modal.show();
+        });
+
+        document.getElementById('editSaveConfirmBtn').addEventListener('click', function() {
+            var id = document.getElementById('editProjectId').value;
+            var payload = {
+                priorityNo: parseInt(document.getElementById('userAddPapPriorityNo').value, 10),
+                papName: document.getElementById('userAddPapName').value.trim(),
+                responsiblePerson: document.getElementById('userAddPapResponsible').value.trim(),
+                budget: parseFloat(document.getElementById('userAddPapBudget').value),
+                timeFrameStart: document.getElementById('userAddPapTimeStart').value,
+                timeFrameEnd: document.getElementById('userAddPapTimeEnd').value,
+                supportOffice: document.getElementById('userAddPapOrg').value.trim(),
+                alignmentGrowth: document.getElementById('userAddPapGrowth').value || null,
+                alignmentAchieve: document.getElementById('userAddPapAchieve').value || null,
+                remarksType: document.getElementById('userAddPapRemarksContinuingType').value.trim(),
+                remarksTypeOther: document.getElementById('userAddPapRemarksContinuingOther').value.trim() || null,
+                remarks: document.getElementById('userAddPapRemarks').value.trim() || null,
+                statusQ1: document.getElementById('userAddPapQ1').value,
+                statusQ2: document.getElementById('userAddPapQ2').value,
+                statusQ3: document.getElementById('userAddPapQ3').value,
+                statusQ4: document.getElementById('userAddPapQ4').value
+            };
+
+            fetch('/Pages/User/Edit/' + id, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/Pages/User/Project';
+                } else {
+                    alert('Error: ' + (data.errors ? data.errors.join('\n') : data.message));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            });
+        });
+
+        document.getElementById('editCancelBtn').addEventListener('click', function() {
+            var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editCancelConfirmModal'));
+            modal.show();
+        });
+
+        document.getElementById('editCancelConfirmBtn').addEventListener('click', function() {
+            window.location.href = '/Pages/User/Project';
+        });
+    </script>
+}

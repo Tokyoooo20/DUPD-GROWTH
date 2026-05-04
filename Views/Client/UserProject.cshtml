@@ -9,6 +9,7 @@
     ViewData["DashboardDetailShowTableToolbar"] = true;
     ViewData["DashboardDetailHidePapEditModal"] = true;
     ViewData["DashboardDetailShowRowDelete"] = true;
+    ViewData["DashboardDetailShowRowEdit"] = true;
     ViewData["UserReportToolbarShowAdd"] = false;
 }
 @section Styles {
@@ -28,8 +29,20 @@
         ["ModalPrimaryDismiss"] = false,
         ["ModalSecondaryText"] = "Cancel",
     };
+    var userProjectEditModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "userProjectEditConfirmModal",
+        ["ModalTitle"] = "Edit this project?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to edit this project?</p>",
+        ["ModalPrimaryText"] = "Yes, Edit",
+        ["ModalPrimaryButtonId"] = "userProjectEditConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Cancel",
+    };
 }
 @await Html.PartialAsync("Modal", null, userProjectDropModal)
+@await Html.PartialAsync("Modal", null, userProjectEditModal)
 @section Scripts {
     <script src="~/js/dashboard-charts.js" asp-append-version="true"></script>
     @await Html.PartialAsync("_DashboardPapDetailPageScripts")
@@ -42,20 +55,38 @@
             if (typeof bootstrap === 'undefined') return;
             var table = document.getElementById('papDetailTable');
             var dropModalEl = document.getElementById('userProjectDropConfirmModal');
-            if (!table || !dropModalEl) return;
+            var editModalEl = document.getElementById('userProjectEditConfirmModal');
+            if (!table || !dropModalEl || !editModalEl) return;
 
             var dropModal = bootstrap.Modal.getOrCreateInstance(dropModalEl);
+            var editModal = bootstrap.Modal.getOrCreateInstance(editModalEl);
             var dropConfirmBtn = document.getElementById('userProjectDropConfirmBtn');
+            var editConfirmBtn = document.getElementById('userProjectEditConfirmBtn');
             var pendingDropRow = null;
+            var pendingEditId = null;
 
             table.addEventListener('click', function (e) {
-                var btn = e.target.closest('[data-pap-drop-trigger]');
-                if (!btn || !table.contains(btn)) return;
-                e.preventDefault();
-                var tr = btn.closest('tr');
-                if (!tr || tr.querySelector('td[colspan]')) return;
-                pendingDropRow = tr;
-                dropModal.show();
+                // Drop trigger
+                var dropBtn = e.target.closest('[data-pap-drop-trigger]');
+                if (dropBtn && table.contains(dropBtn)) {
+                    e.preventDefault();
+                    var tr = dropBtn.closest('tr');
+                    if (!tr || tr.querySelector('td[colspan]')) return;
+                    pendingDropRow = tr;
+                    dropModal.show();
+                    return;
+                }
+
+                // Edit trigger
+                var editBtn = e.target.closest('[data-pap-edit-trigger]');
+                if (editBtn && table.contains(editBtn)) {
+                    e.preventDefault();
+                    pendingEditId = editBtn.getAttribute('data-pap-id');
+                    if (pendingEditId) {
+                        editModal.show();
+                    }
+                    return;
+                }
             });
 
             if (dropConfirmBtn) {
@@ -69,8 +100,22 @@
                 });
             }
 
+            if (editConfirmBtn) {
+                editConfirmBtn.addEventListener('click', function () {
+                    if (pendingEditId) {
+                        window.location.href = '/Pages/User/Edit/' + pendingEditId;
+                    }
+                    var inst = bootstrap.Modal.getInstance(editModalEl);
+                    if (inst) inst.hide();
+                });
+            }
+
             dropModalEl.addEventListener('hidden.bs.modal', function () {
                 pendingDropRow = null;
+            });
+
+            editModalEl.addEventListener('hidden.bs.modal', function () {
+                pendingEditId = null;
             });
         })();
     </script>

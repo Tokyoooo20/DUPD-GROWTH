@@ -18,6 +18,10 @@ namespace DupdGrowth.Web.Models
         public string RemarksType { get; set; } = string.Empty;
         public string? RemarksTypeOther { get; set; }
         public string? Remarks { get; set; }
+        public string? StatusQ1 { get; set; }
+        public string? StatusQ2 { get; set; }
+        public string? StatusQ3 { get; set; }
+        public string? StatusQ4 { get; set; }
     }
 
     public class Projects

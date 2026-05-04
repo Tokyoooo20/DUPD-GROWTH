@@ -76,6 +76,7 @@ public record PapSelectCellModel(
 
 public class DashboardPapRow
 {
+    public int Id { get; init; }
     public string Name { get; init; } = "";
     public string ResponsiblePerson { get; init; } = "";
     public string BudgetAllocation { get; init; } = "";

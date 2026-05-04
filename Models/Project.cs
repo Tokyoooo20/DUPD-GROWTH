@@ -26,7 +26,23 @@ public class Project
 
     public string? Remarks { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string? StatusQ1 { get; set; }
+
+    public string? StatusQ2 { get; set; }
+
+    public string? StatusQ3 { get; set; }
+
+    public string? StatusQ4 { get; set; }
+
+    public string? ProjectStatus { get; set; }
+
+    public DateTime? DroppedAt { get; set; }
+
+    public DateTime? DraftAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     public int? OfficeId { get; set; }
 

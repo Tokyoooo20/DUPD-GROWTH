@@ -1,14 +1,8 @@
 @model DupdGrowth.Web.Models.PapSelectCellModel
 <select class="form-select form-select-sm dashboard-pap-select @Model.CssClass" aria-label="@Model.AriaLabel" title="@Model.CurrentValue" disabled>
+    <option value="" selected="@(string.IsNullOrEmpty(Model.CurrentValue))">—</option>
     @foreach (var o in Model.Options)
     {
-        if (string.Equals(Model.CurrentValue, o, StringComparison.OrdinalIgnoreCase))
-        {
-            <option value="@o" selected>@o</option>
-        }
-        else
-        {
-            <option value="@o">@o</option>
-        }
+        <option value="@o" selected="@(string.Equals(Model.CurrentValue, o, StringComparison.OrdinalIgnoreCase))">@o</option>
     }
 </select>

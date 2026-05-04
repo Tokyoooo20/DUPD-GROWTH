@@ -46,8 +46,7 @@ public class LoginController : Controller
                 new(ClaimTypes.NameIdentifier, "admin"),
                 new(ClaimTypes.Email, AdminEmailNormalized),
                 new(ClaimTypes.Name, "Admin"),
-                new(ClaimTypes.Role, "Admin"),
-                new("OfficeName", "System Admin")
+                new(ClaimTypes.Role, "Admin")
             };
             var adminIdentity = new ClaimsIdentity(
                 adminClaims,
@@ -60,7 +59,6 @@ public class LoginController : Controller
         }
 
         var user = await _db.Users.AsNoTracking()
-            .Include(u => u.Office)
             .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
 
         if (user is null
@@ -83,8 +81,7 @@ public class LoginController : Controller
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString(CultureInfo.InvariantCulture)),
             new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Name, user.Name),
-            new("OfficeName", user.Office?.Name ?? "Sample Office")
+            new(ClaimTypes.Name, user.Name)
         };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);

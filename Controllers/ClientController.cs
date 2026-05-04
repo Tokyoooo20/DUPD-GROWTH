@@ -107,6 +107,7 @@ public class ClientController : Controller
 
         var rows = projects.Select(p => new DashboardPapRow
         {
+            Id = p.Id,
             Name = p.Paps,
             ResponsiblePerson = p.ResponsiblePerson,
             BudgetAllocation = p.Budget.ToString("C0", new System.Globalization.CultureInfo("en-PH")),
@@ -116,12 +117,12 @@ public class ClientController : Controller
             AlignmentGrowth = p.Growth ?? "N/A",
             AlignmentAchieve = p.Achieve ?? "N/A",
             RemarksContinuingNew = p.RemarksType,
-            StatusQ1 = "To be Implemented",
-            StatusQ2 = "To be Implemented",
-            StatusQ3 = "To be Implemented",
-            StatusQ4 = "To be Implemented",
+            StatusQ1 = p.StatusQ1 ?? "",
+            StatusQ2 = p.StatusQ2 ?? "",
+            StatusQ3 = p.StatusQ3 ?? "",
+            StatusQ4 = p.StatusQ4 ?? "",
             Remarks = p.Remarks ?? "",
-            Status = "Ongoing" // Default status for now
+            Status = p.ProjectStatus ?? "Ongoing"
         }).ToList();
 
         var vm = new DashboardDetailViewModel
@@ -171,6 +172,62 @@ public class ClientController : Controller
         ViewData["DashboardShellMode"] = "user";
         ViewData["NavbarShowYear"] = false;
         return View("~/Views/Client/CreateNew.cshtml");
+    }
+
+    [HttpGet("User/Edit/{id}")]
+    public async Task<IActionResult> EditProject(int id)
+    {
+        var project = await _db.Projects.FindAsync(id);
+        if (project == null) return NotFound();
+
+        ViewData["SidebarActive"] = "project";
+        ViewData["Title"] = "Edit Project";
+        ViewData["DashboardShellMode"] = "user";
+        ViewData["NavbarShowYear"] = false;
+
+        return View("~/Views/Client/EditProject.cshtml", project);
+    }
+
+    [HttpPost("User/Edit/{id}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditProject(int id, [FromBody] CreatePapRequest request)
+    {
+        var project = await _db.Projects.FindAsync(id);
+        if (project == null) return NotFound();
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList()
+            });
+        }
+
+        project.PriorityNo = request.PriorityNo;
+        project.Paps = request.PapName;
+        project.ResponsiblePerson = request.ResponsiblePerson;
+        project.Budget = request.Budget;
+        project.TimeStart = request.TimeFrameStart;
+        project.TimeEnd = request.TimeFrameEnd;
+        project.Units = request.SupportOffice;
+        project.Growth = request.AlignmentGrowth;
+        project.Achieve = request.AlignmentAchieve;
+        project.RemarksType = request.RemarksType == "Others" && !string.IsNullOrWhiteSpace(request.RemarksTypeOther) ? request.RemarksTypeOther : request.RemarksType;
+        project.Remarks = request.Remarks;
+        project.StatusQ1 = request.StatusQ1;
+        project.StatusQ2 = request.StatusQ2;
+        project.StatusQ3 = request.StatusQ3;
+        project.StatusQ4 = request.StatusQ4;
+        project.UpdatedAt = DateTime.Now;
+
+        _db.Projects.Update(project);
+        await _db.SaveChangesAsync();
+
+        return Ok(new { success = true, message = "Project updated successfully." });
     }
 
     [HttpPost("User/Create")]
