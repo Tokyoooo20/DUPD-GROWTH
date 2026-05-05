@@ -34,6 +34,7 @@
                         @await Html.PartialAsync("_UserReportAddProgramFormFields")
                         <div class="d-flex flex-wrap gap-2 justify-content-end border-top pt-3 mt-4">
                             <button type="button" class="btn btn-outline-secondary px-4" id="editCancelBtn">Cancel</button>
+                            <button type="button" class="btn btn-outline-primary px-4" id="editDraftBtn">Draft</button>
                             <button type="button" class="btn btn-outline-danger px-4" id="editDropBtn">Dropped</button>
                             <button type="button" class="btn btn-primary px-4" id="editSaveBtn">Endorsed</button>
                         </div>
@@ -54,6 +55,17 @@
         ["ModalPrimaryButtonId"] = "editSaveConfirmBtn",
         ["ModalPrimaryDismiss"] = false,
         ["ModalSecondaryText"] = "Close",
+    };
+    var editDraftModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "editDraftConfirmModal",
+        ["ModalTitle"] = "Move to Draft?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to move this project to Draft?</p>",
+        ["ModalPrimaryText"] = "Draft",
+        ["ModalPrimaryButtonId"] = "editDraftConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Cancel",
     };
     var editDropModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
     {
@@ -79,6 +91,7 @@
     };
 }
 @await Html.PartialAsync("Modal", null, editSaveModal)
+@await Html.PartialAsync("Modal", null, editDraftModal)
 @await Html.PartialAsync("Modal", null, editDropModal)
 @await Html.PartialAsync("Modal", null, editCancelModal)
 @section Scripts {
@@ -148,6 +161,12 @@
             modal.show();
         });
 
+        // Edit Draft Logic
+        document.getElementById('editDraftBtn').addEventListener('click', function() {
+            var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editDraftConfirmModal'));
+            modal.show();
+        });
+
         // Edit Drop Logic
         document.getElementById('editDropBtn').addEventListener('click', function() {
             var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editDropConfirmModal'));
@@ -173,6 +192,33 @@
                     }, 1500);
                 } else {
                     showEditToast('Failed to drop project.', 'error');
+                }
+            })
+            .catch(function (error) {
+                console.error('Error:', error);
+                showEditToast('An unexpected error occurred.', 'error');
+            });
+        });
+
+        document.getElementById('editDraftConfirmBtn').addEventListener('click', function() {
+            var id = document.getElementById('editProjectId').value;
+            fetch('/Pages/User/MoveToDraft/' + id, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(function (res) {
+                return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+            })
+            .then(function (result) {
+                if (result.ok && result.data.success) {
+                    showEditToast('Project moved to Draft successfully!', 'success');
+                    setTimeout(function () {
+                        window.location.href = '/Pages/User/Project';
+                    }, 1500);
+                } else {
+                    showEditToast('Failed to move project to Draft.', 'error');
                 }
             })
             .catch(function (error) {

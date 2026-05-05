@@ -211,6 +211,23 @@ public class ClientController : Controller
         return Ok(new { success = true, message = "Project dropped successfully." });
     }
 
+    [HttpPost("User/MoveToDraft/{id}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MoveToDraft(int id)
+    {
+        var project = await _db.Projects.FindAsync(id);
+        if (project == null) return NotFound(new { success = false, message = "Project not found." });
+
+        project.ProjectStatus = "draft";
+        project.DraftAt = DateTime.Now;
+        project.UpdatedAt = DateTime.Now;
+
+        _db.Projects.Update(project);
+        await _db.SaveChangesAsync();
+
+        return Ok(new { success = true, message = "Project moved to Draft successfully." });
+    }
+
     [HttpPost("User/Cancel/{id}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CancelProject(int id)
