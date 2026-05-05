@@ -1,7 +1,16 @@
 @model DupdGrowth.Web.Models.DashboardDetailViewModel
 @{
     Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
-    ViewData["SidebarUserName"] = "Sample User";
+    ViewData["DashboardDetailShowBackLink"] = false;
+    ViewData["DashboardDetailShowKpiStrip"] = false;
+    ViewData["DashboardDetailShowGrowthFilter"] = false;
+    ViewData["DashboardDetailMainHeading"] = "Completed Projects";
+    ViewData["DashboardDetailShowTableToolbar"] = true;
+    ViewData["DashboardDetailHidePapEditModal"] = true;
+    ViewData["DashboardDetailShowRowDelete"] = true;
+    ViewData["DashboardDetailShowRowEdit"] = true;
+    ViewData["UserReportToolbarShowAdd"] = false;
+    ViewData["SidebarUserName"] = User.Identity?.Name ?? "Sample User";
     ViewData["ChartShowGrowthIndicator"] = false;
 }
 @section Styles {

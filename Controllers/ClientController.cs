@@ -293,8 +293,14 @@ public class ClientController : Controller
         }
         else if (sidebarActive == "completed")
         {
-            // If we had a completed status, we would filter here.
-            query = query.Where(p => false);
+            // Filter projects where at least one quarter is marked as "Completed"
+            query = query.Where(p => 
+                p.ProjectStatus != "dropped" && 
+                p.ProjectStatus != "draft" &&
+                (p.StatusQ1 == "Completed" || 
+                 p.StatusQ2 == "Completed" || 
+                 p.StatusQ3 == "Completed" || 
+                 p.StatusQ4 == "Completed"));
         }
         else
         {
