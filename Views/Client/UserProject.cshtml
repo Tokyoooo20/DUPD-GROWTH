@@ -8,7 +8,7 @@
     ViewData["DashboardDetailMainHeading"] = "Project";
     ViewData["DashboardDetailShowTableToolbar"] = true;
     ViewData["DashboardDetailHidePapEditModal"] = true;
-    ViewData["DashboardDetailShowRowDelete"] = true;
+    ViewData["DashboardDetailShowRowDelete"] = false;
     ViewData["DashboardDetailShowRowEdit"] = true;
     ViewData["UserReportToolbarShowAdd"] = false;
 }
@@ -106,7 +106,7 @@
                         return res.json().then(function(data) { return { ok: res.ok, data: data }; }); 
                     })
                     .then(function(result) {
-                        if (result.ok && result.data.success) {
+                        if (result.ok && result.data && result.data.success) {
                             pendingDropRow.remove();
                             pendingDropRow = null;
                             var inst = bootstrap.Modal.getInstance(dropModalEl);
@@ -114,8 +114,10 @@
                             if (typeof showEditToast === 'function') {
                                 showEditToast('Project moved to Dropped successfully!', 'success');
                             }
+                        } else if (result.data && result.data.alreadyInStatus) {
+                            alert(result.data.message || 'This project is already dropped.');
                         } else {
-                            alert('Error: ' + (result.data?.message || 'Failed to drop project.'));
+                            alert('Error: ' + (result.data && result.data.message ? result.data.message : 'Failed to drop project.'));
                         }
                     })
                     .catch(function(err) {

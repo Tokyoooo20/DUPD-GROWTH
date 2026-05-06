@@ -190,8 +190,10 @@
                     setTimeout(function () {
                         window.location.href = '/Pages/User/Project';
                     }, 1500);
+                } else if (result.data?.alreadyInStatus) {
+                    showEditToast(result.data.message || 'This project is already dropped.', 'error');
                 } else {
-                    showEditToast('Failed to drop project.', 'error');
+                    showEditToast(result.data?.message || 'Failed to drop project.', 'error');
                 }
             })
             .catch(function (error) {
@@ -217,8 +219,10 @@
                     setTimeout(function () {
                         window.location.href = '/Pages/User/Project';
                     }, 1500);
+                } else if (result.data?.alreadyInStatus) {
+                    showEditToast(result.data.message || 'This project is already in draft status.', 'error');
                 } else {
-                    showEditToast('Failed to move project to Draft.', 'error');
+                    showEditToast(result.data?.message || 'Failed to move project to Draft.', 'error');
                 }
             })
             .catch(function (error) {

@@ -201,6 +201,11 @@ public class ClientController : Controller
         var project = await _db.Projects.FindAsync(id);
         if (project == null) return NotFound(new { success = false, message = "Project not found." });
 
+        if (string.Equals(project.ProjectStatus, "dropped", StringComparison.OrdinalIgnoreCase))
+        {
+            return Ok(new { success = false, message = "This project is already dropped.", alreadyInStatus = true });
+        }
+
         project.ProjectStatus = "dropped";
         project.DroppedAt = DateTime.Now;
         project.UpdatedAt = DateTime.Now;
@@ -217,6 +222,11 @@ public class ClientController : Controller
     {
         var project = await _db.Projects.FindAsync(id);
         if (project == null) return NotFound(new { success = false, message = "Project not found." });
+
+        if (string.Equals(project.ProjectStatus, "draft", StringComparison.OrdinalIgnoreCase))
+        {
+            return Ok(new { success = false, message = "This project is already in draft status.", alreadyInStatus = true });
+        }
 
         project.ProjectStatus = "draft";
         project.DraftAt = DateTime.Now;
