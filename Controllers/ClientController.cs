@@ -302,6 +302,10 @@ public class ClientController : Controller
                  p.StatusQ3 == "Completed" || 
                  p.StatusQ4 == "Completed"));
         }
+        else if (sidebarActive == "project")
+        {
+            // Show ALL projects regardless of status (completed, draft, dropped)
+        }
         else
         {
             // Default: Project list (show everything NOT dropped or draft)
