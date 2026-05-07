@@ -36,13 +36,35 @@ public class ClientController : Controller
 
         var totalCount = await query.CountAsync();
 
+        var completedCount = await query.CountAsync(p =>
+            p.StatusQ1 == "Completed" ||
+            p.StatusQ2 == "Completed" ||
+            p.StatusQ3 == "Completed" ||
+            p.StatusQ4 == "Completed");
+
+        var ongoingCount = await query.CountAsync(p =>
+            p.StatusQ1 == "On going" ||
+            p.StatusQ2 == "On going" ||
+            p.StatusQ3 == "On going" ||
+            p.StatusQ4 == "On going");
+
+        var notStartedCount = await query.CountAsync(p =>
+            p.StatusQ1 == "To be Implemented" ||
+            p.StatusQ2 == "To be Implemented" ||
+            p.StatusQ3 == "To be Implemented" ||
+            p.StatusQ4 == "To be Implemented");
+
+        var completedPercent = totalCount > 0 ? Math.Round((double)completedCount / totalCount * 100) + "%" : "0%";
+        var ongoingPercent = totalCount > 0 ? Math.Round((double)ongoingCount / totalCount * 100) + "%" : "0%";
+        var notStartedPercent = totalCount > 0 ? Math.Round((double)notStartedCount / totalCount * 100) + "%" : "0%";
+
         var kpi = new DashboardKpiStripViewModel
         {
             ActiveSegment = null,
             TotalPapsValue = totalCount,
-            CompletedPercent = "0%",
-            OngoingPercent = totalCount > 0 ? "100%" : "0%",
-            NotStartedPercent = "0%"
+            CompletedPercent = completedPercent,
+            OngoingPercent = ongoingPercent,
+            NotStartedPercent = notStartedPercent
         };
 
         ViewData["SidebarActive"] = "dashboard";
