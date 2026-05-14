@@ -24,10 +24,21 @@ public class DashboardKpiStripViewModel
     /// <summary>When set (detail page), the matching KPI card is highlighted.</summary>
     public string? ActiveSegment { get; init; }
 
-    public int TotalPapsValue { get; init; } = 1750;
+    public int TotalPapsValue { get; init; }
+
+    /// <summary>Projects with at least one quarter marked Completed (same rule as client dashboard query).</summary>
+    public int CompletedCount { get; init; }
+
+    public int OngoingCount { get; init; }
+
+    public int NotStartedCount { get; init; }
+
     public string CompletedPercent { get; init; } = "21.1%";
     public string OngoingPercent { get; init; } = "32.0%";
     public string NotStartedPercent { get; init; } = "46.9%";
+
+    /// <summary>When set (e.g. client user dashboard), JSON for the Status of PAPs grouped bar chart (see <see cref="PapStatusGrowthChart"/>).</summary>
+    public string? PapStatusGroupedChartJson { get; init; }
 }
 
 /// <summary>Dropdown option lists for PAP detail table (GROWTH, ACHIEVE, quarterly status).</summary>
@@ -107,6 +118,9 @@ public class DashboardDetailViewModel
 
     /// <summary>When set, only rows with this GROWTH alignment are listed (matches <see cref="DashboardPapSelectOptions.Growth"/>).</summary>
     public string? GrowthFilter { get; init; }
+
+    /// <summary>Optional server-side keyword search (clients PAP list toolbar); echoed in pager links.</summary>
+    public string? SearchQuery { get; init; }
 
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 10;

@@ -77,14 +77,108 @@
 
     const pieColors = ['#5B9BD5', '#ED7D31', '#A5A5A5', '#FFC000', '#4472C4', '#70AD47'];
 
-    /** Bottom line: each GROWTH letter with its share (matches bar chart category row + value). */
-    function pieGrowthCaption(data) {
-        const total = data.reduce(function (a, b) { return a + b; }, 0);
+    /** Optional server payload from user dashboard (#pap-status-grouped-chart-data). */
+    var groupedDataJson = null;
+    var groupedDataEl = document.getElementById('pap-status-grouped-chart-data');
+    if (groupedDataEl && groupedDataEl.textContent) {
+        try {
+            groupedDataJson = JSON.parse(groupedDataEl.textContent);
+        } catch (e) {
+            groupedDataJson = null;
+        }
+    }
+
+    var defaultNotStarted = [120, 80, 200, 150, 90, 180];
+    var defaultOngoing = [80, 150, 60, 100, 120, 50];
+    var defaultCompleted = [50, 70, 30, 100, 40, 80];
+
+    var rawNotStarted = groupedDataJson && Array.isArray(groupedDataJson.notYetStarted) && groupedDataJson.notYetStarted.length === 6
+        ? groupedDataJson.notYetStarted
+        : defaultNotStarted;
+    var rawOngoing = groupedDataJson && Array.isArray(groupedDataJson.ongoing) && groupedDataJson.ongoing.length === 6
+        ? groupedDataJson.ongoing
+        : defaultOngoing;
+    var rawCompleted = groupedDataJson && Array.isArray(groupedDataJson.completed) && groupedDataJson.completed.length === 6
+        ? groupedDataJson.completed
+        : defaultCompleted;
+
+    var pillarPapCounts = groupedDataJson && Array.isArray(groupedDataJson.pillarPapCounts) && groupedDataJson.pillarPapCounts.length === 6
+        ? groupedDataJson.pillarPapCounts
+        : null;
+
+    /** Office-wide total PAPs (same as KPI); used if legacy JSON has no per-pillar counts. */
+    var totalPapsForChart = 1750;
+    if (groupedDataJson && typeof groupedDataJson.totalPaps === 'number' && groupedDataJson.totalPaps > 0) {
+        totalPapsForChart = groupedDataJson.totalPaps;
+    }
+
+    /** Demo: hypothetical PAP counts per G–H letter when not using live JSON. */
+    var defaultPillarTotals = [220, 180, 250, 200, 160, 210];
+
+    var pillarDenoms = [];
+    if (pillarPapCounts) {
+        pillarDenoms = pillarPapCounts;
+    } else if (groupedDataJson) {
+        var t = totalPapsForChart > 0 ? totalPapsForChart : 1;
+        for (var j = 0; j < labelsGrowth.length; j++) {
+            pillarDenoms.push(t);
+        }
+    } else {
+        pillarDenoms = defaultPillarTotals;
+    }
+
+    /** Each bar: 100 × (PAPs with that status in pillar) / (PAPs in that pillar in DB). */
+    function papsPercentPerPillar(countArr, denoms) {
+        var out = [];
+        for (var i = 0; i < labelsGrowth.length; i++) {
+            var d = Number(denoms[i]) || 0;
+            if (d <= 0) {
+                out.push(0);
+            } else {
+                out.push((100 * (Number(countArr[i]) || 0)) / d);
+            }
+        }
+        return out;
+    }
+
+    var dataNotStartedPct = papsPercentPerPillar(rawNotStarted, pillarDenoms);
+    var dataOngoingPct = papsPercentPerPillar(rawOngoing, pillarDenoms);
+    var dataCompletedPct = papsPercentPerPillar(rawCompleted, pillarDenoms);
+
+    /** Pie: PAP counts per G–H from live data, else demo slices. */
+    var defaultPieSlices = [18, 12, 25, 8, 15, 22];
+    var pieDataValues;
+    if (pillarPapCounts) {
+        pieDataValues = pillarPapCounts.map(function (x) { return Number(x) || 0; });
+    } else if (groupedDataJson) {
+        pieDataValues = defaultPieSlices.slice();
+    } else {
+        pieDataValues = defaultPillarTotals.map(function (x) { return Number(x) || 0; });
+    }
+
+    var pieOfficeTotalForLabels = (groupedDataJson && typeof groupedDataJson.totalPaps === 'number' && groupedDataJson.totalPaps > 0)
+        ? groupedDataJson.totalPaps
+        : null;
+
+    /** Pie caption: "G 1/11(9%)" — count in pillar / office total PAPs (live) or sum of slices (demo); % rounded. */
+    function pieGrowthCaption(data, officeTotal) {
+        var sumSlices = data.reduce(function (a, b) { return a + (Number(b) || 0); }, 0);
+        var totalBase = (typeof officeTotal === 'number' && officeTotal > 0) ? officeTotal : sumSlices;
         return labelsGrowth.map(function (letter, i) {
-            const v = data[i];
-            const pct = total ? ((v / total) * 100).toFixed(1) : '0.0';
-            return letter + ' ' + pct + '%';
+            var v = Number(data[i]) || 0;
+            var tb = totalBase > 0 ? totalBase : 0;
+            var pct = totalBase > 0 ? Math.round((v / totalBase) * 100) : 0;
+            return letter + ' ' + v + '/' + tb + '(' + pct + '%)';
         }).join('    ');
+    }
+
+    function pieSliceFractionLabel(count, dataArr, officeTotal) {
+        var sumSlices = dataArr.reduce(function (a, b) { return a + (Number(b) || 0); }, 0);
+        var totalBase = (typeof officeTotal === 'number' && officeTotal > 0) ? officeTotal : sumSlices;
+        var v = Number(count) || 0;
+        var tb = totalBase > 0 ? totalBase : 0;
+        var pct = totalBase > 0 ? Math.round((v / totalBase) * 100) : 0;
+        return v + '/' + tb + '(' + pct + '%)';
     }
 
     /** Legend row centered under the chart (matches Status of PAPs reference layout). */
@@ -137,7 +231,8 @@
             datasets: [
                 {
                     label: 'Not yet started',
-                    data: [120, 80, 200, 150, 90, 180],
+                    data: dataNotStartedPct,
+                    rawCounts: rawNotStarted,
                     backgroundColor: papBlue,
                     borderWidth: 0,
                     borderRadius: 3,
@@ -145,7 +240,8 @@
                 },
                 {
                     label: 'Ongoing',
-                    data: [80, 150, 60, 100, 120, 50],
+                    data: dataOngoingPct,
+                    rawCounts: rawOngoing,
                     backgroundColor: papOrange,
                     borderWidth: 0,
                     borderRadius: 3,
@@ -153,7 +249,8 @@
                 },
                 {
                     label: 'Completed',
-                    data: [50, 70, 30, 100, 40, 80],
+                    data: dataCompletedPct,
+                    rawCounts: rawCompleted,
                     backgroundColor: papGrey,
                     borderWidth: 0,
                     borderRadius: 3,
@@ -171,7 +268,24 @@
             plugins: {
                 legend: {
                     display: true,
-                    ...legendBottom
+                    ...legendBottom,
+                    onClick: function () {
+                        /* Legend labels are visual only; do not hide/show series on click. */
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (ctx) {
+                            var base = ctx.dataset.label ? ctx.dataset.label + ': ' : '';
+                            var count = (ctx.dataset.rawCounts && ctx.dataset.rawCounts[ctx.dataIndex] != null)
+                                ? Number(ctx.dataset.rawCounts[ctx.dataIndex])
+                                : 0;
+                            var pctVal = ctx.parsed.y;
+                            var pctR = typeof pctVal === 'number' && !isNaN(pctVal) ? Math.round(pctVal) : 0;
+                            var d = pillarDenoms[ctx.dataIndex] != null ? Number(pillarDenoms[ctx.dataIndex]) : 0;
+                            return base + count + '/' + d + ' (' + pctR + '%)';
+                        }
+                    }
                 },
                 datalabels: {
                     ...datalabelsBase,
@@ -180,7 +294,8 @@
                         return ctx.dataset.backgroundColor;
                     },
                     formatter: function (value) {
-                        return value;
+                        if (typeof value !== 'number' || isNaN(value) || value < 0.05) return '';
+                        return Math.round(value) + '%';
                     }
                 }
             },
@@ -188,24 +303,39 @@
                 ...yGridOnly(13),
                 y: {
                     ...yGridOnly(13).y,
-                    max: 250,
+                    max: 100,
                     ticks: {
                         ...yGridOnly(13).y.ticks,
-                        stepSize: 50,
-                        callback: function (v) { return v; }
+                        stepSize: 20,
+                        callback: function (v) {
+                            return v + '%';
+                        }
                     }
                 }
             }
         }
     });
 
+    /** Accomplishment: % of PAPs in each pillar that have ≥1 quarter Completed (one row = one PAP; same counts as Status "Completed" series). */
+    var accomplishmentPapDenoms = [];
+    for (var aq = 0; aq < labelsGrowth.length; aq++) {
+        if (pillarPapCounts) {
+            accomplishmentPapDenoms.push(Number(pillarPapCounts[aq]) || 0);
+        } else {
+            accomplishmentPapDenoms.push(Number(defaultPillarTotals[aq]) || 0);
+        }
+    }
+    var accomplishmentPcts = papsPercentPerPillar(rawCompleted, accomplishmentPapDenoms);
+
     new Chart(document.getElementById('chartAccomplishment'), {
         type: 'bar',
         data: {
             labels: labelsGrowth,
             datasets: [{
-                label: 'Accomplishment',
-                data: [15.07, 12.34, 18.99, 8.50, 5.25, 19.12],
+                label: 'PAPs with completed quarter',
+                data: accomplishmentPcts,
+                rawCompletedProjects: rawCompleted,
+                rawPapsInPillar: accomplishmentPapDenoms,
                 backgroundColor: papBlue,
                 borderWidth: 0,
                 borderRadius: 3,
@@ -218,11 +348,27 @@
             layout: { padding: { top: 8, bottom: 4 } },
             plugins: {
                 legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (ctx) {
+                            var pctVal = ctx.parsed.y;
+                            var pctR = typeof pctVal === 'number' && !isNaN(pctVal) ? Math.round(pctVal) : 0;
+                            var rawC = (ctx.dataset.rawCompletedProjects && ctx.dataset.rawCompletedProjects[ctx.dataIndex] != null)
+                                ? Number(ctx.dataset.rawCompletedProjects[ctx.dataIndex])
+                                : 0;
+                            var rawM = (ctx.dataset.rawPapsInPillar && ctx.dataset.rawPapsInPillar[ctx.dataIndex] != null)
+                                ? Number(ctx.dataset.rawPapsInPillar[ctx.dataIndex])
+                                : 0;
+                            return (ctx.dataset.label || '') + ': ' + pctR + '% (' + rawC + '/' + rawM + ' PAPs)';
+                        }
+                    }
+                },
                 datalabels: {
                     ...datalabelsBase,
                     color: papBlue,
                     formatter: function (value) {
-                        return Number(value).toFixed(2) + '%';
+                        if (typeof value !== 'number' || isNaN(value) || value < 0.5) return '';
+                        return Math.round(value) + '%';
                     }
                 }
             },
@@ -230,12 +376,12 @@
                 ...yGridOnly(12),
                 y: {
                     ...yGridOnly(12).y,
-                    max: 20,
+                    max: 100,
                     ticks: {
                         ...yGridOnly(12).y.ticks,
-                        stepSize: 5,
+                        stepSize: 20,
                         callback: function (v) {
-                            return Number(v).toFixed(2) + '%';
+                            return v + '%';
                         }
                     }
                 }
@@ -290,13 +436,14 @@
         });
     }
 
-    const pieDataValues = [18, 12, 25, 8, 15, 22];
+    const pieDataValuesForChart = pieDataValues;
+    var pieTitleText = pieGrowthCaption(pieDataValuesForChart, pieOfficeTotalForLabels);
     new Chart(document.getElementById('chartStatusPie'), {
         type: 'pie',
         data: {
             labels: labelsGrowth,
             datasets: [{
-                data: pieDataValues,
+                data: pieDataValuesForChart,
                 backgroundColor: pieColors,
                 borderWidth: 1,
                 borderColor: '#fff'
@@ -312,7 +459,7 @@
                 legend: { display: false },
                 title: {
                     display: true,
-                    text: pieGrowthCaption(pieDataValues),
+                    text: pieTitleText,
                     position: 'bottom',
                     align: 'center',
                     padding: { top: 10, bottom: 2 },
@@ -333,11 +480,10 @@
                             return tooltipItems[0].label;
                         },
                         label: function (context) {
-                            const data = context.dataset.data;
-                            const total = data.reduce(function (a, b) { return a + b; }, 0);
-                            const v = context.parsed;
-                            const pct = total ? ((v / total) * 100).toFixed(1) : '0.0';
-                            return pct + '%';
+                            var v = context.parsed;
+                            var data = context.dataset.data;
+                            var frac = pieSliceFractionLabel(v, data, pieOfficeTotalForLabels);
+                            return v + ' PAP' + (v === 1 ? '' : 's') + ' · ' + frac;
                         }
                     }
                 }

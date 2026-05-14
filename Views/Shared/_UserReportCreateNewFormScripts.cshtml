@@ -125,9 +125,22 @@
                     body: JSON.stringify(payload)
                 })
                 .then(function (res) {
-                    return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+                    return res.json().then(function (data) { return { ok: res.ok, status: res.status, data: data }; });
                 })
                 .then(function (result) {
+                    if (result.data && result.data.duplicatePriority) {
+                        var msgEl = document.getElementById('createNewPriorityDuplicateModalMessage');
+                        if (msgEl && result.data.message) {
+                            msgEl.textContent = result.data.message;
+                        }
+                        var dupEl = document.getElementById('createNewPriorityDuplicateModal');
+                        if (dupEl && typeof bootstrap !== 'undefined') {
+                            bootstrap.Modal.getOrCreateInstance(dupEl).show();
+                        } else {
+                            showCreateNewToast(result.data.message || 'This priority number is already in use.', 'error');
+                        }
+                        return;
+                    }
                     if (result.ok && result.data.success) {
                         showCreateNewToast('Project saved as endorsed!', 'success');
                         setTimeout(function () {

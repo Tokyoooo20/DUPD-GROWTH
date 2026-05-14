@@ -58,9 +58,26 @@
         ["ModalPrimaryDismiss"] = false,
         ["ModalSecondaryText"] = "Stay",
     };
+    var createNewPriorityDuplicateModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "createNewPriorityDuplicateModal",
+        ["ModalTitle"] = "Priority number already in use",
+        ["ModalTitleHtml"] = "<span class=\"d-inline-flex align-items-center gap-2\"><i class=\"bi bi-exclamation-triangle-fill text-danger flex-shrink-0\" aria-hidden=\"true\"></i><span>Priority number already in use</span></span>",
+        ["ModalSize"] = "modal-sm",
+        ["ModalContentClass"] = "border-danger border-2 shadow-sm",
+        ["ModalHeaderClass"] = "bg-white border-bottom border-danger",
+        ["ModalTitleClass"] = "fw-semibold text-dark fs-6 mb-0",
+        ["ModalCloseButtonClass"] = "btn-close",
+        ["ModalPrimaryButtonClass"] = "btn btn-outline-danger",
+        ["ModalBody"] = "<p class=\"mb-0 text-body\" id=\"createNewPriorityDuplicateModalMessage\">This priority number is already assigned to another project in your office. Please enter a different priority number.</p>",
+        ["ModalPrimaryText"] = "OK",
+        ["ModalPrimaryDismiss"] = true,
+        ["ModalSecondaryText"] = "Close",
+    };
 }
 @await Html.PartialAsync("Modal", null, createNewSaveEndorsedModal)
 @await Html.PartialAsync("Modal", null, createNewCancelModal)
+@await Html.PartialAsync("Modal", null, createNewPriorityDuplicateModal)
 @section Scripts {
     @await Html.PartialAsync("_DashboardPapDetailPageScripts")
     @await Html.PartialAsync("_UserReportCreateNewFormScripts")

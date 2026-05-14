@@ -27,7 +27,48 @@ public static class DashboardPapDetailPage
         Pap("Wellness program rollout", "Ms. O. Ramos", "₱480,000", "Apr 2026", "Mar 2027", "VPGASO", "I. Global Recognition", "Advanced & Accessible Lifelong Learning", "New", "To be Implemented", "On going", "To be Implemented", "To be Implemented", "Training", "Ongoing")
     ];
 
-    private static readonly DashboardKpiStripViewModel DefaultKpi = new();
+    /// <summary>Sample KPI strip (admin dashboard home + shared defaults for detail builders).</summary>
+    public static readonly DashboardKpiStripViewModel DefaultKpi = CreateDefaultKpi();
+
+    private static DashboardKpiStripViewModel CreateDefaultKpi()
+    {
+        var total = SamplePaps.Count;
+        var completed = SamplePaps.Count(RowHasCompletedQuarter);
+        var ongoing = SamplePaps.Count(RowHasOngoingQuarter);
+        var notStarted = SamplePaps.Count(RowHasNotStartedQuarter);
+
+        static string Pct(int n, int tot) =>
+            tot > 0 ? $"{Math.Round((double)n / tot * 100)}%" : "0%";
+
+        return new DashboardKpiStripViewModel
+        {
+            TotalPapsValue = total,
+            CompletedCount = completed,
+            OngoingCount = ongoing,
+            NotStartedCount = notStarted,
+            CompletedPercent = Pct(completed, total),
+            OngoingPercent = Pct(ongoing, total),
+            NotStartedPercent = Pct(notStarted, total)
+        };
+    }
+
+    private static bool RowHasCompletedQuarter(DashboardPapRow p) =>
+        string.Equals(p.StatusQ1, "Completed", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(p.StatusQ2, "Completed", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(p.StatusQ3, "Completed", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(p.StatusQ4, "Completed", StringComparison.OrdinalIgnoreCase);
+
+    private static bool RowHasOngoingQuarter(DashboardPapRow p) =>
+        string.Equals(p.StatusQ1, "On going", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(p.StatusQ2, "On going", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(p.StatusQ3, "On going", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(p.StatusQ4, "On going", StringComparison.OrdinalIgnoreCase);
+
+    private static bool RowHasNotStartedQuarter(DashboardPapRow p) =>
+        string.Equals(p.StatusQ1, "To be Implemented", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(p.StatusQ2, "To be Implemented", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(p.StatusQ3, "To be Implemented", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(p.StatusQ4, "To be Implemented", StringComparison.OrdinalIgnoreCase);
 
     public static DashboardDetailViewModel? CreateViewModel(string segment, int page, int? year, string? growth)
     {
@@ -52,6 +93,9 @@ public static class DashboardPapDetailPage
         {
             ActiveSegment = key,
             TotalPapsValue = DefaultKpi.TotalPapsValue,
+            CompletedCount = DefaultKpi.CompletedCount,
+            OngoingCount = DefaultKpi.OngoingCount,
+            NotStartedCount = DefaultKpi.NotStartedCount,
             CompletedPercent = DefaultKpi.CompletedPercent,
             OngoingPercent = DefaultKpi.OngoingPercent,
             NotStartedPercent = DefaultKpi.NotStartedPercent
@@ -111,6 +155,9 @@ public static class DashboardPapDetailPage
         {
             ActiveSegment = null,
             TotalPapsValue = DefaultKpi.TotalPapsValue,
+            CompletedCount = DefaultKpi.CompletedCount,
+            OngoingCount = DefaultKpi.OngoingCount,
+            NotStartedCount = DefaultKpi.NotStartedCount,
             CompletedPercent = DefaultKpi.CompletedPercent,
             OngoingPercent = DefaultKpi.OngoingPercent,
             NotStartedPercent = DefaultKpi.NotStartedPercent

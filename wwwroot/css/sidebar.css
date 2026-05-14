@@ -59,6 +59,22 @@ body.app-layout-body {
   min-height: 56px;
 }
 
+/* Top bar: user / office block — left-aligned, caps-lock style */
+.navbar-user--capslock {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+}
+
+.navbar-user--capslock .navbar-user__line {
+  font-size: 0.72rem;
+}
+
+.navbar-user--capslock .navbar-user__line--primary {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+}
+
 .app-navbar-avatar {
   width: 34px;
   height: 34px;

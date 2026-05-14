@@ -19,7 +19,8 @@
                            id="userPapTableSearch"
                            placeholder="Search PAPs, person, office…"
                            autocomplete="off"
-                           aria-label="Search table rows" />
+                           aria-label="Search table rows"
+                           value="@(ViewData["ToolbarSearchQuery"] as string ?? "")" />
                 </div>
             </div>
         }

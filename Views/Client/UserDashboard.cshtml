@@ -31,7 +31,7 @@
                             </div>
                             <div class="dashboard-kpi-card__content">
                                 <span class="dashboard-kpi-card__label">Completed</span>
-                                <span class="dashboard-kpi-card__value">@Model.CompletedPercent</span>
+                                <span class="dashboard-kpi-card__value">@($"{Model.CompletedCount}/{Model.TotalPapsValue}({Model.CompletedPercent})")</span>
                             </div>
                         </div>
                     </div>
@@ -42,7 +42,7 @@
                             </div>
                             <div class="dashboard-kpi-card__content">
                                 <span class="dashboard-kpi-card__label">Ongoing</span>
-                                <span class="dashboard-kpi-card__value">@Model.OngoingPercent</span>
+                                <span class="dashboard-kpi-card__value">@($"{Model.OngoingCount}/{Model.TotalPapsValue}({Model.OngoingPercent})")</span>
                             </div>
                         </div>
                     </div>
@@ -53,7 +53,7 @@
                             </div>
                             <div class="dashboard-kpi-card__content">
                                 <span class="dashboard-kpi-card__label">Not started</span>
-                                <span class="dashboard-kpi-card__value">@Model.NotStartedPercent</span>
+                                <span class="dashboard-kpi-card__value">@($"{Model.NotStartedCount}/{Model.TotalPapsValue}({Model.NotStartedPercent})")</span>
                             </div>
                         </div>
                     </div>
@@ -65,6 +65,10 @@
     </div>
 </div>
 @section Scripts {
+    @if (!string.IsNullOrEmpty(Model.PapStatusGroupedChartJson))
+    {
+        <script type="application/json" id="pap-status-grouped-chart-data">@Html.Raw(Model.PapStatusGroupedChartJson)</script>
+    }
     <script src="~/lib/chart.js/dist/chart.umd.min.js" asp-append-version="true"></script>
     <script src="~/lib/chartjs-plugin-datalabels/chartjs-plugin-datalabels.min.js" asp-append-version="true"></script>
     <script src="~/js/dashboard-charts.js" asp-append-version="true"></script>

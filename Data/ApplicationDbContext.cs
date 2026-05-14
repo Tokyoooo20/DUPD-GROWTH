@@ -58,6 +58,11 @@ public class ApplicationDbContext : DbContext
             e.Property(o => o.Id).HasColumnName("office_id");
             e.Property(o => o.Name).HasColumnName("office_name").IsRequired().HasMaxLength(200);
             e.Property(o => o.ParentId).HasColumnName("parent_id");
+            e.HasOne(o => o.Parent)
+                .WithMany()
+                .HasForeignKey(o => o.ParentId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         var c = _userCols;

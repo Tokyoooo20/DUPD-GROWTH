@@ -6,7 +6,7 @@ namespace DupdGrowth.Web.Controllers.SuperAdmin;
 [Route("Pages")]
 public class DashboardController : Controller
 {
-    private static readonly DashboardKpiStripViewModel DefaultKpi = new();
+    private static readonly DashboardKpiStripViewModel DefaultKpi = DashboardPapDetailPage.DefaultKpi;
 
     private void SetNavbarYearViewData(int selectedYear, string? detailSegment, int? detailPage)
     {

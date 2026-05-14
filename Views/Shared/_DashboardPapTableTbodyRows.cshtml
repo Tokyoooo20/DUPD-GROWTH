@@ -1,0 +1,91 @@
+@model DupdGrowth.Web.Models.DashboardDetailViewModel
+@using DupdGrowth.Web.Models
+@{
+    var showPriorityNoColumn = ViewData["DashboardDetailShowPriorityNoColumn"] as bool? ?? true;
+    var showRowDelete = ViewData["DashboardDetailShowRowDelete"] as bool? ?? false;
+    var showRowEdit = ViewData["DashboardDetailShowRowEdit"] as bool? ?? true;
+    var showRowActionsColumn = showRowEdit || showRowDelete;
+}
+@if (Model.Rows.Count == 0)
+{
+    <tr>
+        <td colspan="@(14 + (showPriorityNoColumn ? 1 : 0) + (showRowActionsColumn ? 1 : 0))" class="text-center text-body-secondary py-4">
+            @(Model.GrowthFilter is not null
+                ? "No PAPs match this GROWTH filter."
+                : !string.IsNullOrWhiteSpace(Model.SearchQuery)
+                    ? "No PAPs match your search."
+                    : "No rows to display.")
+        </td>
+    </tr>
+}
+else
+{
+    var priorityBase = (Model.Page - 1) * Model.PageSize;
+    var priorityIndex = 0;
+    @foreach (var row in Model.Rows)
+    {
+        priorityIndex++;
+        <tr>
+            @if (showPriorityNoColumn)
+            {
+                <td class="dashboard-pap-col-priority text-center text-body-secondary small" aria-label="Priority number">@(priorityBase + priorityIndex)</td>
+            }
+            <td class="dashboard-pap-col-pap dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--pap"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.Name" title="@row.Name" readonly autocomplete="off" aria-label="PAP name" /></td>
+            <td class="dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--md"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.ResponsiblePerson" title="@row.ResponsiblePerson" readonly autocomplete="off" aria-label="Responsible person" /></td>
+            <td><input type="text" class="form-control form-control-sm dashboard-pap-text-input" value="@row.BudgetAllocation" readonly autocomplete="off" aria-label="Budget allocation" /></td>
+            <td><input type="text" class="form-control form-control-sm dashboard-pap-text-input" value="@row.TimeFrameStart" readonly autocomplete="off" aria-label="Time frame start" /></td>
+            <td><input type="text" class="form-control form-control-sm dashboard-pap-text-input" value="@row.TimeFrameEnd" readonly autocomplete="off" aria-label="Time frame end" /></td>
+            <td class="dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--md"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.SupportOfficesUnits" title="@row.SupportOfficesUnits" readonly autocomplete="off" aria-label="Support offices or units" /></td>
+            <td class="dashboard-pap-select-cell">
+                @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.Growth, row.AlignmentGrowth, "dashboard-pap-select--growth", "GROWTH alignment"))
+            </td>
+            <td class="dashboard-pap-select-cell dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--achieve">
+                @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.Achieve, row.AlignmentAchieve, "dashboard-pap-select--achieve dashboard-pap-select--ellipsis", "ACHIEVE alignment"))
+            </td>
+            <td class="dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--remarks"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.RemarksContinuingNew" title="@row.RemarksContinuingNew" readonly autocomplete="off" aria-label="Remarks continuing or new" /></td>
+            <td class="dashboard-pap-select-cell">
+                @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.QuarterStatuses, row.StatusQ1, "dashboard-pap-select--quarter", "1st quarter status"))
+            </td>
+            <td class="dashboard-pap-select-cell">
+                @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.QuarterStatuses, row.StatusQ2, "dashboard-pap-select--quarter", "2nd quarter status"))
+            </td>
+            <td class="dashboard-pap-select-cell">
+                @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.QuarterStatuses, row.StatusQ3, "dashboard-pap-select--quarter", "3rd quarter status"))
+            </td>
+            <td class="dashboard-pap-select-cell">
+                @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.QuarterStatuses, row.StatusQ4, "dashboard-pap-select--quarter", "4th quarter status"))
+            </td>
+            <td class="dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--remarks"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.Remarks" title="@row.Remarks" readonly autocomplete="off" aria-label="Remarks" /></td>
+            @if (showRowActionsColumn)
+            {
+                <td class="dashboard-pap-col-actions">
+                    @if (showRowEdit || showRowDelete)
+                    {
+                        <div class="d-inline-flex align-items-center gap-1" role="group" aria-label="Row actions">
+                            @if (showRowEdit)
+                            {
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary dashboard-pap-btn-edit"
+                                        data-pap-edit-trigger
+                                        data-pap-id="@row.Id"
+                                        aria-label="Edit">
+                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                </button>
+                            }
+                            @if (showRowDelete)
+                            {
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger"
+                                        data-pap-drop-trigger
+                                        data-pap-id="@row.Id"
+                                        aria-label="Drop project">
+                                    <i class="bi bi-trash3" aria-hidden="true"></i>
+                                </button>
+                            }
+                        </div>
+                    }
+                </td>
+            }
+        </tr>
+    }
+}

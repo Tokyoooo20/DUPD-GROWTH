@@ -19,6 +19,25 @@ public class ClientController : Controller
         _db = db;
     }
 
+    /// <summary>Allowed <c>list</c> values for <see cref="UserPapTableData"/> (client PAP table AJAX).</summary>
+    private static class ClientPapSearchLists
+    {
+        public const string Project = "project";
+        public const string Completed = "completed";
+        public const string Draft = "draft";
+        public const string Dropped = "dropped";
+    }
+
+    /// <summary>Support Offices/Units label stored on the project; always the logged-in user's office, not client-submitted text.</summary>
+    private static string ResolveSupportOfficeUnits(User user, string? officeNameClaim)
+    {
+        if (user.Office != null && !string.IsNullOrWhiteSpace(user.Office.Name))
+            return user.Office.Name.Trim();
+        if (user.ParentOffice != null && !string.IsNullOrWhiteSpace(user.ParentOffice.Name))
+            return user.ParentOffice.Name.Trim();
+        return officeNameClaim?.Trim() ?? "";
+    }
+
     [HttpGet("User/Dashboard")]
     public async Task<IActionResult> UserDashboard()
     {
@@ -28,31 +47,14 @@ public class ClientController : Controller
         var currentUser = await _db.Users.FindAsync(userId.Value);
         if (currentUser == null) return Unauthorized();
 
-        var query = _db.Projects.AsQueryable();
-        if (currentUser.OfficeId.HasValue)
-        {
-            query = query.Where(p => p.OfficeId == currentUser.OfficeId || p.ParentId == currentUser.OfficeId);
-        }
+        var query = ApplyClientProjectOfficeScope(_db.Projects.AsQueryable(), currentUser);
 
-        var totalCount = await query.CountAsync();
+        var chartProjects = await query
+            .AsNoTracking()
+            .ToListAsync();
 
-        var completedCount = await query.CountAsync(p =>
-            p.StatusQ1 == "Completed" ||
-            p.StatusQ2 == "Completed" ||
-            p.StatusQ3 == "Completed" ||
-            p.StatusQ4 == "Completed");
-
-        var ongoingCount = await query.CountAsync(p =>
-            p.StatusQ1 == "On going" ||
-            p.StatusQ2 == "On going" ||
-            p.StatusQ3 == "On going" ||
-            p.StatusQ4 == "On going");
-
-        var notStartedCount = await query.CountAsync(p =>
-            p.StatusQ1 == "To be Implemented" ||
-            p.StatusQ2 == "To be Implemented" ||
-            p.StatusQ3 == "To be Implemented" ||
-            p.StatusQ4 == "To be Implemented");
+        var totalCount = chartProjects.Count;
+        var (completedCount, ongoingCount, notStartedCount) = PapStatusGrowthChart.CountProjectsForKpiStrip(chartProjects);
 
         var completedPercent = totalCount > 0 ? Math.Round((double)completedCount / totalCount * 100) + "%" : "0%";
         var ongoingPercent = totalCount > 0 ? Math.Round((double)ongoingCount / totalCount * 100) + "%" : "0%";
@@ -62,9 +64,13 @@ public class ClientController : Controller
         {
             ActiveSegment = null,
             TotalPapsValue = totalCount,
+            CompletedCount = completedCount,
+            OngoingCount = ongoingCount,
+            NotStartedCount = notStartedCount,
             CompletedPercent = completedPercent,
             OngoingPercent = ongoingPercent,
-            NotStartedPercent = notStartedPercent
+            NotStartedPercent = notStartedPercent,
+            PapStatusGroupedChartJson = PapStatusGrowthChart.SerializeGroupedCounts(chartProjects)
         };
 
         ViewData["SidebarActive"] = "dashboard";
@@ -77,11 +83,59 @@ public class ClientController : Controller
     }
 
     /// <summary>Same PAP detail UI as admin; user sidebar and routes under <c>/Pages/User/Project</c>.</summary>
+    [HttpGet("User/PapTableData")]
+    public async Task<IActionResult> UserPapTableData(
+        string list,
+        string? q = null,
+        int page = 1,
+        int? year = null,
+        string? growth = null,
+        string? segment = null)
+    {
+        string sidebar;
+        string title;
+        string actionName;
+
+        switch (list?.Trim().ToLowerInvariant())
+        {
+            case ClientPapSearchLists.Project:
+                sidebar = "project";
+                title = "Project";
+                actionName = nameof(UserProject);
+                break;
+            case ClientPapSearchLists.Completed:
+                sidebar = "completed";
+                title = "Completed Projects";
+                actionName = nameof(Completed);
+                break;
+            case ClientPapSearchLists.Draft:
+                sidebar = "draft";
+                title = "Draft";
+                actionName = nameof(Draft);
+                break;
+            case ClientPapSearchLists.Dropped:
+                sidebar = "dropped";
+                title = "Dropped";
+                actionName = nameof(UserDropped);
+                break;
+            default:
+                return BadRequest();
+        }
+
+        var seg = sidebar == ClientPapSearchLists.Project
+            ? (string.IsNullOrWhiteSpace(segment) ? DashboardSegments.Total : segment!)
+            : DashboardSegments.Total;
+
+        var vm = await GetProjectFilteredViewModel(sidebar, title, actionName, page, year, growth, seg, search: q);
+        Response.Headers.CacheControl = "no-store";
+        return PartialView("~/Views/Shared/_DashboardPapAjaxTableUpdate.cshtml", vm);
+    }
+
     [HttpGet("User/Project/{segment?}")]
-    public async Task<IActionResult> UserProject(string? segment, int page = 1, int? year = null, string? growth = null)
+    public async Task<IActionResult> UserProject(string? segment, int page = 1, int? year = null, string? growth = null, string? q = null)
     {
         var seg = string.IsNullOrWhiteSpace(segment) ? DashboardSegments.Total : segment;
-        var vm = await GetProjectFilteredViewModel("project", "Project", nameof(UserProject), page, year, growth, seg);
+        var vm = await GetProjectFilteredViewModel("project", "Project", nameof(UserProject), page, year, growth, seg, search: q);
         
         ViewData["NavbarSelectedYear"] = vm.SelectedYear;
         ViewData["NavbarYears"] = DashboardPapDetailPage.YearOptions;
@@ -134,6 +188,17 @@ public class ClientController : Controller
         var project = await _db.Projects.FindAsync(id);
         if (project == null) return NotFound();
 
+        var editorUserId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var eid) ? eid : (int?)null;
+        if (editorUserId is null)
+            return Unauthorized(new { success = false, errors = new[] { "User not authenticated." } });
+
+        var editor = await _db.Users
+            .Include(u => u.Office)
+            .Include(u => u.ParentOffice)
+            .FirstOrDefaultAsync(u => u.Id == editorUserId.Value);
+        if (editor == null)
+            return Unauthorized(new { success = false, errors = new[] { "User not found in database." } });
+
         if (!ModelState.IsValid)
         {
             return BadRequest(new
@@ -152,7 +217,7 @@ public class ClientController : Controller
         project.Budget = request.Budget;
         project.TimeStart = request.TimeFrameStart;
         project.TimeEnd = request.TimeFrameEnd;
-        project.Units = request.SupportOffice;
+        project.Units = ResolveSupportOfficeUnits(editor, User.FindFirstValue("OfficeName"));
         project.Growth = request.AlignmentGrowth;
         project.Achieve = request.AlignmentAchieve;
         project.RemarksType = request.RemarksType == "Others" && !string.IsNullOrWhiteSpace(request.RemarksTypeOther) ? request.RemarksTypeOther : request.RemarksType;
@@ -189,9 +254,26 @@ public class ClientController : Controller
         if (userId is null)
             return Unauthorized(new { success = false, errors = new[] { "User not authenticated." } });
 
-        var currentUser = await _db.Users.FindAsync(userId.Value);
+        var currentUser = await _db.Users
+            .Include(u => u.Office)
+            .Include(u => u.ParentOffice)
+            .FirstOrDefaultAsync(u => u.Id == userId.Value);
         if (currentUser == null)
             return Unauthorized(new { success = false, errors = new[] { "User not found in database." } });
+
+        var supportUnits = ResolveSupportOfficeUnits(currentUser, User.FindFirstValue("OfficeName"));
+
+        var inScope = ApplyClientProjectOfficeScope(_db.Projects.AsQueryable(), currentUser);
+        var priorityTaken = await inScope.AnyAsync(p => p.PriorityNo == request.PriorityNo);
+        if (priorityTaken)
+        {
+            return Conflict(new
+            {
+                success = false,
+                duplicatePriority = true,
+                message = "This priority number is already assigned to another project in your office. Please choose a different priority number."
+            });
+        }
 
         var project = new Project
         {
@@ -201,7 +283,7 @@ public class ClientController : Controller
             Budget = request.Budget,
             TimeStart = request.TimeFrameStart,
             TimeEnd = request.TimeFrameEnd,
-            Units = request.SupportOffice,
+            Units = supportUnits,
             Growth = request.AlignmentGrowth,
             Achieve = request.AlignmentAchieve,
             RemarksType = request.RemarksType == "Others" && !string.IsNullOrWhiteSpace(request.RemarksTypeOther) ? request.RemarksTypeOther : request.RemarksType,
@@ -277,36 +359,32 @@ public class ClientController : Controller
     public IActionResult UserDrop() => RedirectToAction(nameof(UserDropped));
 
     [HttpGet("User/Dropped")]
-    public async Task<IActionResult> UserDropped(int page = 1, int? year = null, string? growth = null)
+    public async Task<IActionResult> UserDropped(int page = 1, int? year = null, string? growth = null, string? q = null)
     {
-        var vm = await GetProjectFilteredViewModel("dropped", "Dropped", nameof(UserDropped), page, year, growth);
+        var vm = await GetProjectFilteredViewModel("dropped", "Dropped", nameof(UserDropped), page, year, growth, segment: null, search: q);
         return View("~/Views/Client/UserDropped.cshtml", vm);
     }
 
     [HttpGet("User/Completed")]
-    public async Task<IActionResult> Completed(int page = 1, int? year = null, string? growth = null)
+    public async Task<IActionResult> Completed(int page = 1, int? year = null, string? growth = null, string? q = null)
     {
-        var vm = await GetProjectFilteredViewModel("completed", "Completed", nameof(Completed), page, year, growth);
+        var vm = await GetProjectFilteredViewModel("completed", "Completed", nameof(Completed), page, year, growth, segment: null, search: q);
         return View("~/Views/Client/Completed.cshtml", vm);
     }
 
     [HttpGet("User/Draft")]
-    public async Task<IActionResult> Draft(int page = 1, int? year = null, string? growth = null)
+    public async Task<IActionResult> Draft(int page = 1, int? year = null, string? growth = null, string? q = null)
     {
-        var vm = await GetProjectFilteredViewModel("draft", "Draft", nameof(Draft), page, year, growth);
+        var vm = await GetProjectFilteredViewModel("draft", "Draft", nameof(Draft), page, year, growth, segment: null, search: q);
         return View("~/Views/Client/Draft.cshtml", vm);
     }
 
-    private async Task<DashboardDetailViewModel> GetProjectFilteredViewModel(string sidebarActive, string title, string actionName, int page, int? year, string? growth, string? segment = null)
+    private async Task<DashboardDetailViewModel> GetProjectFilteredViewModel(string sidebarActive, string title, string actionName, int page, int? year, string? growth, string? segment = null, string? search = null)
     {
         var userId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : (int?)null;
         var currentUser = userId.HasValue ? await _db.Users.FindAsync(userId.Value) : null;
 
-        var query = _db.Projects.AsQueryable();
-        if (currentUser?.OfficeId.HasValue == true)
-        {
-            query = query.Where(p => p.OfficeId == currentUser.OfficeId || p.ParentId == currentUser.OfficeId);
-        }
+        var query = ApplyClientProjectOfficeScope(_db.Projects.AsQueryable(), currentUser);
 
         // Apply filters
         if (!string.IsNullOrWhiteSpace(growth))
@@ -336,7 +414,8 @@ public class ClientController : Controller
         }
         else if (sidebarActive == "project")
         {
-            // Show ALL projects regardless of status (completed, draft, dropped)
+            // User Project table: omit draft and dropped (those have dedicated pages).
+            query = query.Where(p => p.ProjectStatus != "dropped" && p.ProjectStatus != "draft");
         }
         else
         {
@@ -351,10 +430,13 @@ public class ClientController : Controller
             // For now we keep it simple as requested.
         }
 
+        query = ApplyClientProjectKeywordSearch(query, search);
+
         var totalCount = await query.CountAsync();
         var pageSize = 10;
         var projects = await query
             .OrderBy(p => p.PriorityNo)
+            .ThenBy(p => p.Id)
             .Skip((Math.Max(1, page) - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -385,6 +467,9 @@ public class ClientController : Controller
             {
                 ActiveSegment = segment?.ToLowerInvariant(),
                 TotalPapsValue = totalCount,
+                CompletedCount = 0,
+                OngoingCount = 0,
+                NotStartedCount = 0,
                 CompletedPercent = "0%",
                 OngoingPercent = totalCount > 0 ? "100%" : "0%",
                 NotStartedPercent = "0%"
@@ -393,6 +478,7 @@ public class ClientController : Controller
             TableSubtitle = title,
             SelectedYear = year ?? 2026,
             GrowthFilter = growth,
+            SearchQuery = string.IsNullOrWhiteSpace(search) ? null : search.Trim(),
             Page = page,
             PageSize = pageSize,
             TotalCount = totalCount
@@ -420,11 +506,83 @@ public class ClientController : Controller
         ViewData["DashboardDetailShowKpiStrip"] = false;
         ViewData["DashboardDetailShowGrowthFilter"] = false;
         ViewData["DashboardDetailMainHeading"] = title;
-        ViewData["DashboardDetailShowTableToolbar"] = false;
+        ViewData["DashboardDetailShowTableToolbar"] = true;
         ViewData["DashboardDetailShowPriorityNoColumn"] = true;
         ViewData["DashboardDetailHidePapEditModal"] = true;
         ViewData["DashboardDetailShowRowDelete"] = false;
         ViewData["DashboardDetailShowRowEdit"] = false;
         ViewData["DashboardSidebarStartCollapsed"] = true;
+        ViewData["PapSearchListKey"] =
+            sidebarActive.Equals(ClientPapSearchLists.Dropped, StringComparison.OrdinalIgnoreCase)
+                ? ClientPapSearchLists.Dropped
+                : sidebarActive;
+        ViewData["UserReportToolbarShowAdd"] =
+            sidebarActive.Equals(ClientPapSearchLists.Project, StringComparison.OrdinalIgnoreCase);
+        ViewData["UserReportToolbarShowSearch"] = true;
+    }
+
+    /// <summary>
+    /// Client-visible projects: same office hierarchy as <see cref="Project"/> rows created for the user
+    /// (<c>OfficeId</c> / <c>ParentId</c> from the signed-in user's office fields). No global list when offices are unset.
+    /// </summary>
+    /// <summary>AND-of-tokens substring match across common project text fields.</summary>
+    private static IQueryable<Project> ApplyClientProjectKeywordSearch(IQueryable<Project> query, string? search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+            return query;
+
+        var tokens = search.Trim().Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var raw in tokens)
+        {
+            var term = raw;
+            decimal? amtExact =
+                decimal.TryParse(term.Trim(), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var amt)
+                    ? amt
+                    : null;
+            int? prExact =
+                int.TryParse(term.Trim(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var pn)
+                    ? pn
+                    : null;
+
+            query = query.Where(p =>
+                (p.Paps != null && p.Paps.Contains(term)) ||
+                (p.ResponsiblePerson != null && p.ResponsiblePerson.Contains(term)) ||
+                (p.Units != null && p.Units.Contains(term)) ||
+                (p.Remarks != null && p.Remarks.Contains(term)) ||
+                (!string.IsNullOrEmpty(p.RemarksType) && p.RemarksType.Contains(term)) ||
+                (p.Growth != null && p.Growth.Contains(term)) ||
+                (p.Achieve != null && p.Achieve.Contains(term)) ||
+                (p.StatusQ1 != null && p.StatusQ1.Contains(term)) ||
+                (p.StatusQ2 != null && p.StatusQ2.Contains(term)) ||
+                (p.StatusQ3 != null && p.StatusQ3.Contains(term)) ||
+                (p.StatusQ4 != null && p.StatusQ4.Contains(term)) ||
+                (p.ProjectStatus != null && p.ProjectStatus.Contains(term)) ||
+                (p.TimeStart != null && p.TimeStart.Contains(term)) ||
+                (p.TimeEnd != null && p.TimeEnd.Contains(term)) ||
+                (prExact.HasValue && p.PriorityNo == prExact.Value) ||
+                (amtExact.HasValue && p.Budget == amtExact.Value));
+        }
+
+        return query;
+    }
+
+    private static IQueryable<Project> ApplyClientProjectOfficeScope(IQueryable<Project> query, User? user)
+    {
+        if (user is null)
+            return query.Where(_ => false);
+
+        if (user.OfficeId.HasValue)
+        {
+            var oid = user.OfficeId.Value;
+            return query.Where(p => p.OfficeId == oid || p.ParentId == oid);
+        }
+
+        if (user.ParentOfficeId.HasValue)
+        {
+            var pid = user.ParentOfficeId.Value;
+            return query.Where(p => p.OfficeId == pid || p.ParentId == pid);
+        }
+
+        return query.Where(_ => false);
     }
 }

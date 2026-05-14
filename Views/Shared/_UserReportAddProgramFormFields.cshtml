@@ -5,17 +5,17 @@
     var createNewLayout = ViewData["UserReportAddProgramCreateNewLayout"] as bool? ?? false;
     var priCol = createNewLayout ? "col-12 col-md-6" : "col-12 col-md-4";
     var papCol = createNewLayout ? "col-12 col-md-6" : "col-12 col-md-8";
+    var userOfficeForPap = User.FindFirst("OfficeName")?.Value?.Trim() ?? "";
 }
 <div class="d-flex flex-column gap-3">
     <div class="row g-3 align-items-start">
         <div class="@priCol">
             <label for="userAddPapPriorityNo" class="form-label fw-semibold">Priority No.</label>
-            <input type="number"
+            <input type="text"
                    class="form-control"
                    id="userAddPapPriorityNo"
-                   min="1"
-                   step="1"
                    inputmode="numeric"
+                   autocomplete="off"
                    placeholder="e.g. 1"
                    aria-label="Priority number" />
         </div>
@@ -39,12 +39,11 @@
             <label for="userAddPapBudget" class="form-label fw-semibold">Budget</label>
             <div class="input-group">
                 <span class="input-group-text">₱</span>
-                <input type="number"
+                <input type="text"
                        class="form-control"
                        id="userAddPapBudget"
                        inputmode="decimal"
-                       min="0"
-                       step="0.01"
+                       autocomplete="off"
                        placeholder="0"
                        aria-label="Budget amount" />
             </div>
@@ -77,15 +76,11 @@
         </div>
     </div>
 
-    <div>
-        <label for="userAddPapOrg" class="form-label fw-semibold">Support Offices/Units</label>
-        <input type="text" 
-               class="form-control bg-light" 
-               id="userAddPapOrg" 
-               value="@(User.FindFirst("OfficeName")?.Value ?? "Sample Office")" 
-               readonly 
-               aria-label="Support offices or units" />
-    </div>
+    <input type="hidden"
+           id="userAddPapOrg"
+           value="@userOfficeForPap"
+           data-default-office="@userOfficeForPap"
+           autocomplete="off" />
 
     <div class="row g-3">
         <div class="col-12 col-md-6">
@@ -266,3 +261,25 @@
         </div>
     }
 </div>
+@* Digits-only priority; budget allows one decimal point. Shared by Create New, Edit, and Add Program modal. *@
+<script>
+    (function () {
+        if (window.__dupdPapNumericFieldsBound) return;
+        window.__dupdPapNumericFieldsBound = true;
+        document.addEventListener('input', function (e) {
+            var t = e.target;
+            if (!t || !t.id) return;
+            if (t.id === 'userAddPapPriorityNo') {
+                var v = t.value.replace(/\D/g, '');
+                if (t.value !== v) t.value = v;
+            } else if (t.id === 'userAddPapBudget') {
+                var s = t.value.replace(/[^\d.]/g, '');
+                var d = s.indexOf('.');
+                if (d !== -1) {
+                    s = s.slice(0, d + 1) + s.slice(d + 1).replace(/\./g, '');
+                }
+                if (t.value !== s) t.value = s;
+            }
+        });
+    })();
+</script>

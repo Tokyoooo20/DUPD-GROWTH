@@ -16,6 +16,12 @@
     ViewData["ModalPrimaryUrl"]      — optional string URL: primary renders as <a class="btn btn-primary"> (e.g. logout)
     ViewData["ModalPrimaryDismiss"]    — bool, default true (primary closes modal on click; ignored when ModalPrimaryUrl is set)
     ViewData["ModalSecondaryDismiss"] — bool, default true (secondary uses data-bs-dismiss)
+    ViewData["ModalHeaderClass"]      — optional extra classes on .modal-header (e.g. bg-danger text-white)
+    ViewData["ModalTitleClass"]       — optional extra classes on .modal-title (h5)
+    ViewData["ModalCloseButtonClass"] — optional full class for the header close button (default "btn-close"; use "btn-close btn-close-white" on dark header)
+    ViewData["ModalPrimaryButtonClass"] — optional classes for primary button (default "btn btn-primary")
+    ViewData["ModalContentClass"]      — optional extra classes on .modal-content (e.g. border-danger)
+    ViewData["ModalTitleHtml"]         — optional raw HTML for .modal-title (use instead of plain ModalTitle when set)
 
     Open from a button: data-bs-toggle="modal" data-bs-target="#yourModalId"
 *@
@@ -36,6 +42,12 @@
     var primaryUrl = ViewData["ModalPrimaryUrl"] as string;
     var primaryDismiss = ViewData["ModalPrimaryDismiss"] as bool? ?? true;
     var secondaryDismiss = ViewData["ModalSecondaryDismiss"] as bool? ?? true;
+    var headerExtraClass = ViewData["ModalHeaderClass"] as string;
+    var titleExtraClass = ViewData["ModalTitleClass"] as string;
+    var closeBtnClass = ViewData["ModalCloseButtonClass"] as string ?? "btn-close";
+    var primaryBtnClass = ViewData["ModalPrimaryButtonClass"] as string ?? "btn btn-primary";
+    var contentExtraClass = ViewData["ModalContentClass"] as string;
+    var titleHtml = ViewData["ModalTitleHtml"] as string;
 
     /* Bootstrap 5: modal-dialog-centered before modal-dialog-scrollable when both are used. */
     var dialogClasses = "modal-dialog" + (string.IsNullOrEmpty(sizeClass) ? "" : " " + sizeClass);
@@ -44,10 +56,19 @@
 }
 <div class="modal fade" id="@modalId" tabindex="-1" aria-labelledby="@titleId" aria-hidden="true">
     <div class="@dialogClasses">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="@titleId">@title</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content@(string.IsNullOrEmpty(contentExtraClass) ? "" : " " + contentExtraClass)">
+            <div class="modal-header@(string.IsNullOrEmpty(headerExtraClass) ? "" : " " + headerExtraClass)">
+                <h5 class="modal-title@(string.IsNullOrEmpty(titleExtraClass) ? "" : " " + titleExtraClass)" id="@titleId">
+                    @if (!string.IsNullOrEmpty(titleHtml))
+                    {
+                        @Html.Raw(titleHtml)
+                    }
+                    else
+                    {
+                        @title
+                    }
+                </h5>
+                <button type="button" class="@closeBtnClass" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 @if (!string.IsNullOrEmpty(bodyHtml))
@@ -80,33 +101,33 @@
                         {
                             if (string.IsNullOrEmpty(primaryBtnId))
                             {
-                                <a href="@primaryUrl" class="btn btn-primary" role="button">@primaryText</a>
+                                <a href="@primaryUrl" class="@primaryBtnClass" role="button">@primaryText</a>
                             }
                             else
                             {
-                                <a href="@primaryUrl" class="btn btn-primary" id="@primaryBtnId" role="button">@primaryText</a>
+                                <a href="@primaryUrl" class="@primaryBtnClass" id="@primaryBtnId" role="button">@primaryText</a>
                             }
                         }
                         else if (string.IsNullOrEmpty(primaryBtnId))
                         {
                             if (primaryDismiss)
                             {
-                                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">@primaryText</button>
+                                <button type="button" class="@primaryBtnClass" data-bs-dismiss="modal">@primaryText</button>
                             }
                             else
                             {
-                                <button type="button" class="btn btn-primary">@primaryText</button>
+                                <button type="button" class="@primaryBtnClass">@primaryText</button>
                             }
                         }
                         else
                         {
                             if (primaryDismiss)
                             {
-                                <button type="button" class="btn btn-primary" id="@primaryBtnId" data-bs-dismiss="modal">@primaryText</button>
+                                <button type="button" class="@primaryBtnClass" id="@primaryBtnId" data-bs-dismiss="modal">@primaryText</button>
                             }
                             else
                             {
-                                <button type="button" class="btn btn-primary" id="@primaryBtnId">@primaryText</button>
+                                <button type="button" class="@primaryBtnClass" id="@primaryBtnId">@primaryText</button>
                             }
                         }
                     }

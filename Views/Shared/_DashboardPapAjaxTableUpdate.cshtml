@@ -1,0 +1,16 @@
+@model DupdGrowth.Web.Models.DashboardDetailViewModel
+@*
+  Rows must not be wrapped in a <div>: <tr> inside <div> is invalid HTML.
+  DOMParser / innerHTML normalization drops table structure — cells stack as plain flow.
+  A real <tbody> keeps <tr>/<td> intact when AJAX replaces live tbody HTML.
+*@
+<div class="pap-ajax-bundle" hidden>
+    <table class="pap-ajax-rows-shell">
+        <tbody class="pap-ajax-trs">
+            @await Html.PartialAsync("_DashboardPapTableTbodyRows", Model, ViewData)
+        </tbody>
+    </table>
+    <div class="pap-ajax-pagination">
+        @await Html.PartialAsync("_DashboardPapTablePagination", Model, ViewData)
+    </div>
+</div>

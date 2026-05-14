@@ -96,7 +96,7 @@
 }
 
 .dashboard-kpi-card__label {
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: #64748b;
     letter-spacing: 0.01em;
@@ -104,11 +104,11 @@
 }
 
 .dashboard-kpi-card__value {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: 700;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em;
     color: #0f172a;
-    line-height: 1.15;
+    line-height: 1.2;
 }
 
 .dashboard-kpi-card__hint {

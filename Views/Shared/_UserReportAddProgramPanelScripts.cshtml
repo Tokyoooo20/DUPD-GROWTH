@@ -219,9 +219,14 @@
                 var elx = document.getElementById(id);
                 if (elx) elx.value = '';
             });
-            ['userAddPapRemarksContinuingType', 'userAddPapOrg', 'userAddPapTimeStart', 'userAddPapTimeEnd', 'userAddPapGrowth', 'userAddPapAchieve', 'userAddPapQ1', 'userAddPapQ2', 'userAddPapQ3', 'userAddPapQ4'].forEach(function (id) {
+            var orgH = document.getElementById('userAddPapOrg');
+            if (orgH) {
+                var d = orgH.getAttribute('data-default-office');
+                orgH.value = d != null ? d : '';
+            }
+            ['userAddPapRemarksContinuingType', 'userAddPapTimeStart', 'userAddPapTimeEnd', 'userAddPapGrowth', 'userAddPapAchieve', 'userAddPapQ1', 'userAddPapQ2', 'userAddPapQ3', 'userAddPapQ4'].forEach(function (id) {
                 var sel = document.getElementById(id);
-                if (sel) sel.selectedIndex = 0;
+                if (sel && sel.tagName === 'SELECT') sel.selectedIndex = 0;
             });
             syncRemarksContinuingNewUi();
         }
@@ -240,7 +245,6 @@
             var inpBudget = tds[o + 2].querySelector('input');
             var inpStart = tds[o + 3].querySelector('input');
             var inpEnd = tds[o + 4].querySelector('input');
-            var inpSupport = tds[o + 5].querySelector('input');
             var selGrowth = tds[o + 6].querySelector('select');
             var selAchieve = tds[o + 7].querySelector('select');
             var inpCont = tds[o + 8].querySelector('input');
@@ -255,7 +259,6 @@
             if (inpBudget) document.getElementById('userAddPapBudget').value = parseBudgetToNumberString(inpBudget.value);
             if (inpStart) setSelectValue(document.getElementById('userAddPapTimeStart'), parseMonthFromCell(inpStart.value));
             if (inpEnd) setSelectValue(document.getElementById('userAddPapTimeEnd'), parseMonthFromCell(inpEnd.value));
-            if (inpSupport) setSelectValue(document.getElementById('userAddPapOrg'), inpSupport.value.trim());
             if (selGrowth) setSelectValue(document.getElementById('userAddPapGrowth'), selGrowth.value);
             if (selAchieve) setSelectValue(document.getElementById('userAddPapAchieve'), selAchieve.value);
             if (inpCont) setRemarksContinuingFromCell(inpCont.value);
@@ -332,23 +335,6 @@
             syncPapEllipsisTooltips(tr);
         }
 
-        if (HAS_TABLE && searchInput) {
-            searchInput.addEventListener('input', function () {
-                var q = searchInput.value.trim().toLowerCase();
-                var rows = table.querySelectorAll('tbody tr');
-                rows.forEach(function (tr) {
-                    var emptyMsg = tr.querySelector('td[colspan]');
-                    if (emptyMsg) {
-                        tr.style.display = '';
-                        return;
-                    }
-                    var text = tr.textContent.toLowerCase();
-                    tr.style.display = !q || text.indexOf(q) !== -1 ? '' : 'none';
-                });
-            });
-        }
-
-        function closeAddModalAfterEditAction() {
             userReportEditRow = null;
             if (addTitleEl) addTitleEl.textContent = 'Add Program';
             setAddProgramModalFooterMode(false);

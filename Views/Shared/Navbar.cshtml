@@ -5,12 +5,30 @@
     var segment = ViewData["NavbarSegment"] as string;
     var page = ViewData["NavbarPage"] as int?;
     var yearDetailAction = ViewData["NavbarYearDetailAction"] as string ?? "DashboardDetail";
+    var navOfficeName = User.FindFirst("OfficeName")?.Value;
+    var navParentOfficeName = User.FindFirst("ParentOfficeName")?.Value;
+    var navShowParentOffice = !string.IsNullOrWhiteSpace(navParentOfficeName);
+    var navShowOfficeStrip = User.Identity?.IsAuthenticated == true
+        && (!string.IsNullOrWhiteSpace(navOfficeName) || navShowParentOffice);
 }
 <nav class="navbar navbar-expand-lg bg-white border-bottom flex-shrink-0 app-topbar">
-    <div class="container-fluid">
+    <div class="container-fluid d-flex flex-wrap align-items-center justify-content-between gap-2 gap-sm-3">
+        @if (navShowOfficeStrip)
+        {
+            <div class="navbar-user navbar-user--capslock text-start small text-uppercase">
+                @if (navShowParentOffice)
+                {
+                    <div class="navbar-user__line navbar-user__line--primary text-dark text-nowrap" title="Parent office">@navParentOfficeName</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(navOfficeName))
+                {
+                    <div class="navbar-user__line navbar-user__line--primary text-dark text-nowrap" title="Your office">@navOfficeName</div>
+                }
+            </div>
+        }
         @if (showYear)
         {
-            <div class="dropdown ms-auto" id="navbarYearDropdown">
+            <div class="dropdown @(!navShowOfficeStrip ? "ms-auto" : null)" id="navbarYearDropdown">
                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="navbarYearButton">
                     Year: @selectedYear
                 </button>

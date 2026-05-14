@@ -1,0 +1,54 @@
+@model DupdGrowth.Web.Models.DashboardDetailViewModel
+@{
+    var papListAction = ViewData["PapListAction"] as string ?? "DashboardDetail";
+    var papListController = ViewData["PapListController"] as string ?? "Dashboard";
+    var routeQ = Model.SearchQuery;
+}
+@if (Model.TotalPages > 1)
+{
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-3 border-top bg-white">
+        <nav aria-label="PAP list pagination">
+            <ul class="pagination pagination-sm mb-0 pap-table-pagination">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : null)">
+                    <a class="page-link d-inline-flex align-items-center justify-content-center dashboard-pap-pagination-arrow pap-table-pagination-link"
+                       asp-controller="@papListController"
+                       asp-action="@papListAction"
+                       asp-route-segment="@Model.Kpi.ActiveSegment"
+                       asp-route-page="@(Model.Page - 1)"
+                       asp-route-year="@Model.SelectedYear"
+                       asp-route-growth="@Model.GrowthFilter"
+                       asp-route-q="@routeQ"
+                       aria-label="Previous page">
+                        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                    </a>
+                </li>
+                @for (var p = 1; p <= Model.TotalPages; p++)
+                {
+                    <li class="page-item @(p == Model.Page ? "active" : null)">
+                        <a class="page-link pap-table-pagination-link"
+                           asp-controller="@papListController"
+                           asp-action="@papListAction"
+                           asp-route-segment="@Model.Kpi.ActiveSegment"
+                           asp-route-page="@p"
+                           asp-route-year="@Model.SelectedYear"
+                           asp-route-growth="@Model.GrowthFilter"
+                           asp-route-q="@routeQ">@p</a>
+                    </li>
+                }
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : null)">
+                    <a class="page-link d-inline-flex align-items-center justify-content-center dashboard-pap-pagination-arrow pap-table-pagination-link"
+                       asp-controller="@papListController"
+                       asp-action="@papListAction"
+                       asp-route-segment="@Model.Kpi.ActiveSegment"
+                       asp-route-page="@(Model.Page + 1)"
+                       asp-route-year="@Model.SelectedYear"
+                       asp-route-growth="@Model.GrowthFilter"
+                       asp-route-q="@routeQ"
+                       aria-label="Next page">
+                        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+}

@@ -7,4 +7,6 @@ public class Office
     public string Name { get; set; } = string.Empty;
 
     public int? ParentId { get; set; }
+
+    public Office? Parent { get; set; }
 }
