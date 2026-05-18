@@ -22,4 +22,7 @@ public class User
 
     /// <summary>When false, the user may not sign in until a Super Admin approves the account.</summary>
     public bool IsApproved { get; set; }
+
+    /// <summary>Public web path to profile image (e.g. <c>/uploads/profiles/1.jpg</c>), or null.</summary>
+    public string? ProfilePhotoPath { get; set; }
 }

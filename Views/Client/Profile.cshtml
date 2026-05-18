@@ -1,0 +1,123 @@
+@* Upload + popover behavior: wwwroot/js/sidebar-profile.js. Toasts: showAppNotification (app-notification.js → Notification.cshtml). *@
+@model DupdGrowth.Web.Models.SidebarProfileBrandViewModel
+@{
+    var uploadUrl = Url.Action("UploadProfilePhoto", "Client");
+}
+<div class="app-sidebar-brand app-sidebar-profile-wrap">
+    <button type="button"
+            class="app-sidebar-profile-trigger"
+            id="sidebarProfileTrigger"
+            aria-expanded="false"
+            aria-haspopup="true"
+            aria-controls="sidebarProfilePanel"
+            title="Account menu">
+        <div class="app-sidebar-profile-trigger-thumb" id="sidebarProfileTriggerThumb">
+            @if (!string.IsNullOrEmpty(Model.ProfilePhotoUrl))
+            {
+                <img id="sidebarProfileTriggerImg"
+                     class="app-sidebar-profile-trigger-photo"
+                     src="@Model.ProfilePhotoUrl"
+                     alt=""
+                     width="32"
+                     height="32"
+                     loading="eager" />
+            }
+            else
+            {
+                <i id="sidebarProfileTriggerIcon"
+                   class="bi bi-person-circle app-sidebar-profile-trigger-icon"
+                   aria-hidden="true"></i>
+            }
+        </div>
+        <div class="app-sidebar-brand-text">
+            <span class="app-sidebar-title app-sidebar-profile-office-label">@Model.OfficeName</span>
+        </div>
+        <i class="bi bi-chevron-down app-sidebar-profile-chevron" aria-hidden="true"></i>
+    </button>
+
+    <div class="app-sidebar-profile-panel"
+         id="sidebarProfilePanel"
+         role="dialog"
+         aria-modal="false"
+         aria-labelledby="sidebarProfileHeading"
+         aria-hidden="true">
+        <div class="app-sidebar-profile-card">
+            <div class="app-sidebar-profile-body">
+                <h2 class="app-sidebar-profile-name" id="sidebarProfileHeading">@Model.DisplayName</h2>
+                <p class="app-sidebar-profile-office mb-0">@Model.OfficeName</p>
+                @if (!string.IsNullOrWhiteSpace(Model.Email))
+                {
+                    <p class="app-sidebar-profile-email mb-0">@Model.Email</p>
+                }
+            </div>
+
+            <div class="app-sidebar-profile-avatar-slot">
+                <div class="app-sidebar-profile-avatar"
+                     id="profilePageAvatar"
+                     aria-hidden="true"
+                     data-initials="@Model.Initials">
+                    @if (!string.IsNullOrEmpty(Model.ProfilePhotoUrl))
+                    {
+                        <img id="profilePageAvatarImg"
+                             src="@Model.ProfilePhotoUrl"
+                             alt=""
+                             class="app-sidebar-profile-avatar-img"
+                             width="256"
+                             height="256"
+                             loading="lazy" />
+                    }
+                    else
+                    {
+                        <span id="profilePageAvatarInitials" class="app-sidebar-profile-avatar-initials">@Model.Initials</span>
+                    }
+                </div>
+            </div>
+
+            @if (Model.CanUploadProfilePhoto)
+            {
+                <div class="app-sidebar-profile-settings-link app-sidebar-profile-upload-stack"
+                     id="profilePhotoUploadRoot"
+                     data-upload-endpoint="@uploadUrl"
+                     data-can-upload="true">
+                    @Html.AntiForgeryToken()
+                    <input type="file"
+                           id="profilePagePhotoInput"
+                           name="photo"
+                           class="visually-hidden"
+                           accept="image/jpeg,image/png,image/webp,image/gif"
+                           tabindex="-1" />
+                    <button type="button"
+                            id="profilePagePhotoBtn"
+                            class="btn btn-sm btn-outline-primary w-100">
+                        Upload photo
+                    </button>
+                    <p class="app-sidebar-profile-photo-hint mb-0">JPG, PNG, WebP, or GIF · max 5&nbsp;MB</p>
+                </div>
+            }
+            else
+            {
+                <p class="app-sidebar-profile-admin-hint app-sidebar-profile-upload-stack mb-0">
+                    Profile photo upload is available for office accounts.
+                </p>
+            }
+        </div>
+    </div>
+</div>
+
+@if (Model.CanUploadProfilePhoto)
+{
+    var intentModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "profilePhotoChangeIntentModal",
+        ["ModalTitle"] = "Upload photo?",
+        ["ModalBody"] = "<p class=\"mb-0 app-profile-photo-modal__lead\">Choose an image file on your device. It will replace your current profile photo (including in the sidebar).</p><p class=\"small mb-0 mt-2\">JPG, PNG, WebP, or GIF · max 5&nbsp;MB.</p>",
+        ["ModalSize"] = "modal-sm",
+        ["ModalPrimaryText"] = "Continue",
+        ["ModalSecondaryText"] = "Cancel",
+        ["ModalPrimaryButtonId"] = "profilePhotoChangeIntentContinueBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalContentClass"] = "app-profile-photo-modal rounded-3 shadow-lg",
+        ["ModalCloseButtonClass"] = "btn-close btn-close-white",
+    };
+    @await Html.PartialAsync("Modal", null, intentModal)
+}

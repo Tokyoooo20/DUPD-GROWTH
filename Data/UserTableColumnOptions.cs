@@ -23,5 +23,7 @@ namespace DupdGrowth.Web.Models
         public string CreatedAt { get; set; } = "created_at";
 
         public string IsApproved { get; set; } = "is_approved";
+
+        public string ProfilePhotoPath { get; set; } = "profile_photo_path";
     }
 }

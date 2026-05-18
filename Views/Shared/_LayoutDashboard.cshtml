@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/sidebar.css" asp-append-version="true" />
+    @* profile.css must be linked (not @import end of sidebar.css — invalid/hit-or-miss in browsers). *@
+    <link rel="stylesheet" href="~/css/User/profile.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/notification.css" asp-append-version="true" />
     @* Prefetch the other dashboard page so the next click often loads from cache (less flicker). *@
     <link rel="prefetch" href="@Url.Action("Dashboard", "Dashboard")" />
     <link rel="prefetch" href="@Url.Action("Reports", "Dashboard")" />
@@ -16,11 +19,14 @@
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="m-0 app-layout-body overflow-x-hidden">
+    @await Html.PartialAsync("Notification")
     @RenderBody()
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/app-notification.js" asp-append-version="true"></script>
+    <script src="~/js/sidebar-profile.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -77,6 +77,7 @@ public class ApplicationDbContext : DbContext
             e.Property(u => u.PasswordHash).HasColumnName(c.PasswordHash).HasMaxLength(255);
             e.Property(u => u.CreatedAt).HasColumnName(c.CreatedAt);
             e.Property(u => u.IsApproved).HasColumnName(c.IsApproved);
+            e.Property(u => u.ProfilePhotoPath).HasColumnName(c.ProfilePhotoPath).HasMaxLength(512);
             e.HasIndex(u => u.Email).IsUnique();
 
             e.HasOne(u => u.ParentOffice)

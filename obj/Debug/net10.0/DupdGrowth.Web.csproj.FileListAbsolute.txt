@@ -3201,7 +3201,6 @@ c:\DUPD - GROWTH\_verify-build-out2\runtimes\win-x64\native\k5sprt64.dll
 c:\DUPD - GROWTH\_verify-build-out2\runtimes\win-x64\native\krb5_64.dll
 c:\DUPD - GROWTH\_verify-build-out2\runtimes\win-x64\native\krbcc64.dll
 c:\DUPD - GROWTH\_verify-build-out2\runtimes\win\lib\net8.0\System.Windows.Extensions.dll
-C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\88mpm7x872-{0}-pmo14zefgd-pmo14zefgd.gz
 C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\66tbfwjhl4-{0}-dd2v3p88zm-dd2v3p88zm.gz
 c:\DUPD - GROWTH\_build-verify-out\appsettings.Development.json
 c:\DUPD - GROWTH\_build-verify-out\appsettings.json
@@ -4063,7 +4062,6 @@ C:\DUPD - GROWTH\bin\BuildCheck\runtimes\win-x64\native\k5sprt64.dll
 C:\DUPD - GROWTH\bin\BuildCheck\runtimes\win-x64\native\krb5_64.dll
 C:\DUPD - GROWTH\bin\BuildCheck\runtimes\win-x64\native\krbcc64.dll
 C:\DUPD - GROWTH\bin\BuildCheck\runtimes\win\lib\net8.0\System.Windows.Extensions.dll
-C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\nllhvlnfor-{0}-kmavoyhn0j-kmavoyhn0j.gz
 C:\DUPD - GROWTH\_agent-verify-build\appsettings.Development.json
 C:\DUPD - GROWTH\_agent-verify-build\appsettings.json
 C:\DUPD - GROWTH\_agent-verify-build\_bv\appsettings.Development.json
@@ -4973,3 +4971,9 @@ C:\DUPD - GROWTH\bin\Debug\net10.0\_agent-verify-build\_bv\DupdGrowth.Web.runtim
 C:\DUPD - GROWTH\bin\Debug\net10.0\_agent-verify-build\_bv\DupdGrowth.Web.staticwebassets.endpoints.json
 C:\DUPD - GROWTH\bin\Debug\net10.0\_agent-verify-build\_bv\DupdGrowth.Web.staticwebassets.runtime.json
 C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\m1mo3mjet1-{0}-vj2tu7drm4-vj2tu7drm4.gz
+C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\nllhvlnfor-{0}-3y6xejs5fp-3y6xejs5fp.gz
+C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\7r93kntsvr-{0}-p7rybplnjh-p7rybplnjh.gz
+C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\88mpm7x872-{0}-1cn4x8i641-1cn4x8i641.gz
+C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\h7wtyum8wb-{0}-6g2lq9dj9c-6g2lq9dj9c.gz
+C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\vrngnjoom6-{0}-mc04vzl9x7-mc04vzl9x7.gz
+C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\kbw968z4l0-{0}-1vj1f9k15e-1vj1f9k15e.gz

@@ -450,3 +450,4 @@ body.app-layout-body:has(.dashboard-sidebar-shell.is-collapsed) {
     transition-duration: 0.01ms !important;
   }
 }
+

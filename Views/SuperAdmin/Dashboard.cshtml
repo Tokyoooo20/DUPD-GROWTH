@@ -1,15 +1,11 @@
-@model DupdGrowth.Web.Models.DashboardKpiStripViewModel
+@model DashboardKpiStripViewModel
 @{
     Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
     ViewData["Title"] = "Dashboard";
     ViewData["SidebarActive"] = "dashboard";
     ViewData["SidebarUserName"] = "Sample User";
     ViewData["NavbarShowYear"] = true;
-    var navYear = ViewData["NavbarSelectedYear"] as int? ?? 2026;
-
-    bool IsActive(string segment) =>
-        Model.ActiveSegment is not null &&
-        string.Equals(Model.ActiveSegment, segment, StringComparison.OrdinalIgnoreCase);
+    ViewData["ChartShowGrowthIndicator"] = false;
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/SuperAdmin/superadmin-dashboard.css" asp-append-version="true" />
@@ -25,70 +21,43 @@
                     <h1 class="dashboard-page-title">DASHBOARD</h1>
                 </header>
 
+                @* Same four KPI cards as client User dashboard; values from DB for all offices (see DashboardController.Dashboard). *@
                 <div class="row g-3 g-lg-4 mb-3 mb-lg-4">
                     <div class="col-6 col-xl-3">
-                        <a class="kpi-link h-100 d-block @(IsActive(DashboardSegments.Total) ? "kpi-link--active" : null)"
-                           asp-controller="Dashboard"
-                           asp-action="Reports"
-                           asp-route-segment="@DashboardSegments.Total"
-                           asp-route-year="@navYear"
-                           aria-current="@(IsActive(DashboardSegments.Total) ? "page" : null)">
-                            <div class="h-100" data-kpi-total-paps data-value="@Model.TotalPapsValue" data-label="Total PAPs"></div>
-                        </a>
+                        <div class="h-100" data-kpi-total-paps data-value="@Model.TotalPapsValue" data-label="Total PAPs"></div>
                     </div>
                     <div class="col-6 col-xl-3">
-                        <a class="kpi-link h-100 d-block @(IsActive(DashboardSegments.Completed) ? "kpi-link--active" : null)"
-                           asp-controller="Dashboard"
-                           asp-action="Reports"
-                           asp-route-segment="@DashboardSegments.Completed"
-                           asp-route-year="@navYear"
-                           aria-current="@(IsActive(DashboardSegments.Completed) ? "page" : null)">
-                            <div class="dashboard-kpi-card h-100">
-                                <div class="dashboard-kpi-card__icon dashboard-kpi-card__icon--completed" aria-hidden="true">
-                                    <i class="bi bi-patch-check-fill"></i>
-                                </div>
-                                <div class="dashboard-kpi-card__content">
-                                    <span class="dashboard-kpi-card__label">Completed</span>
-                                    <span class="dashboard-kpi-card__value">@($"{Model.CompletedCount}/{Model.TotalPapsValue}({Model.CompletedPercent})")</span>
-                                </div>
+                        <div class="dashboard-kpi-card h-100">
+                            <div class="dashboard-kpi-card__icon dashboard-kpi-card__icon--completed" aria-hidden="true">
+                                <i class="bi bi-patch-check-fill"></i>
                             </div>
-                        </a>
+                            <div class="dashboard-kpi-card__content">
+                                <span class="dashboard-kpi-card__label">Completed</span>
+                                <span class="dashboard-kpi-card__value">@($"{Model.CompletedCount}/{Model.TotalPapsValue}({Model.CompletedPercent})")</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-6 col-xl-3">
-                        <a class="kpi-link h-100 d-block @(IsActive(DashboardSegments.Ongoing) ? "kpi-link--active" : null)"
-                           asp-controller="Dashboard"
-                           asp-action="Reports"
-                           asp-route-segment="@DashboardSegments.Ongoing"
-                           asp-route-year="@navYear"
-                           aria-current="@(IsActive(DashboardSegments.Ongoing) ? "page" : null)">
-                            <div class="dashboard-kpi-card h-100">
-                                <div class="dashboard-kpi-card__icon dashboard-kpi-card__icon--ongoing" aria-hidden="true">
-                                    <i class="bi bi-arrow-clockwise"></i>
-                                </div>
-                                <div class="dashboard-kpi-card__content">
-                                    <span class="dashboard-kpi-card__label">Ongoing</span>
-                                    <span class="dashboard-kpi-card__value">@($"{Model.OngoingCount}/{Model.TotalPapsValue}({Model.OngoingPercent})")</span>
-                                </div>
+                        <div class="dashboard-kpi-card h-100">
+                            <div class="dashboard-kpi-card__icon dashboard-kpi-card__icon--ongoing" aria-hidden="true">
+                                <i class="bi bi-arrow-clockwise"></i>
                             </div>
-                        </a>
+                            <div class="dashboard-kpi-card__content">
+                                <span class="dashboard-kpi-card__label">Ongoing</span>
+                                <span class="dashboard-kpi-card__value">@($"{Model.OngoingCount}/{Model.TotalPapsValue}({Model.OngoingPercent})")</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-6 col-xl-3">
-                        <a class="kpi-link h-100 d-block @(IsActive(DashboardSegments.NotStarted) ? "kpi-link--active" : null)"
-                           asp-controller="Dashboard"
-                           asp-action="Reports"
-                           asp-route-segment="@DashboardSegments.NotStarted"
-                           asp-route-year="@navYear"
-                           aria-current="@(IsActive(DashboardSegments.NotStarted) ? "page" : null)">
-                            <div class="dashboard-kpi-card h-100">
-                                <div class="dashboard-kpi-card__icon dashboard-kpi-card__icon--not-started" aria-hidden="true">
-                                    <i class="bi bi-dash-circle"></i>
-                                </div>
-                                <div class="dashboard-kpi-card__content">
-                                    <span class="dashboard-kpi-card__label">Not started</span>
-                                    <span class="dashboard-kpi-card__value">@($"{Model.NotStartedCount}/{Model.TotalPapsValue}({Model.NotStartedPercent})")</span>
-                                </div>
+                        <div class="dashboard-kpi-card h-100">
+                            <div class="dashboard-kpi-card__icon dashboard-kpi-card__icon--not-started" aria-hidden="true">
+                                <i class="bi bi-dash-circle"></i>
                             </div>
-                        </a>
+                            <div class="dashboard-kpi-card__content">
+                                <span class="dashboard-kpi-card__label">Not started</span>
+                                <span class="dashboard-kpi-card__value">@($"{Model.NotStartedCount}/{Model.TotalPapsValue}({Model.NotStartedPercent})")</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -98,6 +67,10 @@
     </div>
 </div>
 @section Scripts {
+    @if (!string.IsNullOrEmpty(Model.PapStatusGroupedChartJson))
+    {
+        <script type="application/json" id="pap-status-grouped-chart-data">@Html.Raw(Model.PapStatusGroupedChartJson)</script>
+    }
     <script src="~/lib/chart.js/dist/chart.umd.min.js" asp-append-version="true"></script>
     <script src="~/lib/chartjs-plugin-datalabels/chartjs-plugin-datalabels.min.js" asp-append-version="true"></script>
     <script src="~/js/dashboard-charts.js" asp-append-version="true"></script>

@@ -200,7 +200,8 @@
         font: { family: fontFamily, size: 11, weight: '600' },
         anchor: 'end',
         align: 'top',
-        offset: 2,
+        /** Extra space above bar so "100%" labels are not clipped when y max is 100%. */
+        offset: 6,
         clip: false
     };
 
@@ -262,7 +263,8 @@
             responsive: true,
             maintainAspectRatio: false,
             layout: {
-                padding: { top: 8, bottom: 8, left: 8, right: 8 }
+                /** Top inset leaves room for % labels above bars at 100% (chart area max is still 100%). */
+                padding: { top: 28, bottom: 8, left: 8, right: 8 }
             },
             interaction: { mode: 'index', intersect: false },
             plugins: {
@@ -303,12 +305,17 @@
                 ...yGridOnly(13),
                 y: {
                     ...yGridOnly(13).y,
-                    max: 100,
+                    /** Slightly above 100% so bars at 100 don't touch the plot top (datalabels stay visible). */
+                    max: 115,
                     ticks: {
                         ...yGridOnly(13).y.ticks,
                         stepSize: 20,
                         callback: function (v) {
-                            return v + '%';
+                            var n = typeof v === 'number' ? v : Number(v);
+                            if (n > 100) {
+                                return '';
+                            }
+                            return n + '%';
                         }
                     }
                 }
@@ -345,7 +352,7 @@
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 8, bottom: 4 } },
+            layout: { padding: { top: 24, bottom: 4 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -376,12 +383,16 @@
                 ...yGridOnly(12),
                 y: {
                     ...yGridOnly(12).y,
-                    max: 100,
+                    max: 115,
                     ticks: {
                         ...yGridOnly(12).y.ticks,
                         stepSize: 20,
                         callback: function (v) {
-                            return v + '%';
+                            var n = typeof v === 'number' ? v : Number(v);
+                            if (n > 100) {
+                                return '';
+                            }
+                            return n + '%';
                         }
                     }
                 }

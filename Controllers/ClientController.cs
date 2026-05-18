@@ -1,8 +1,10 @@
+using System.IO;
 using DupdGrowth.Web.Data;
 using DupdGrowth.Web.Models;
 using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,10 +15,12 @@ namespace DupdGrowth.Web.Controllers;
 public class ClientController : Controller
 {
     private readonly ApplicationDbContext _db;
+    private readonly IWebHostEnvironment _env;
 
-    public ClientController(ApplicationDbContext db)
+    public ClientController(ApplicationDbContext db, IWebHostEnvironment env)
     {
         _db = db;
+        _env = env;
     }
 
     /// <summary>Allowed <c>list</c> values for <see cref="UserPapTableData"/> (client PAP table AJAX).</summary>
@@ -564,6 +568,85 @@ public class ClientController : Controller
         }
 
         return query;
+    }
+
+    /// <summary>Multipart upload for profile image; stores under <c>wwwroot/uploads/profiles/</c> and updates <see cref="User.ProfilePhotoPath"/>.</summary>
+    [HttpPost("User/UploadProfilePhoto")]
+    [RequestSizeLimit(5_242_880)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadProfilePhoto(IFormFile? photo, CancellationToken cancellationToken)
+    {
+        if (photo is null || photo.Length == 0)
+            return BadRequest(new { ok = false, error = "No file was uploaded." });
+
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            return BadRequest(new { ok = false, error = "Profile photo is only available for office accounts." });
+
+        if (photo.Length > 5_242_880)
+            return BadRequest(new { ok = false, error = "File is too large (max 5 MB)." });
+
+        var type = (photo.ContentType ?? "").ToLowerInvariant();
+        string ext;
+        switch (type)
+        {
+            case "image/jpeg":
+                ext = ".jpg";
+                break;
+            case "image/png":
+                ext = ".png";
+                break;
+            case "image/webp":
+                ext = ".webp";
+                break;
+            case "image/gif":
+                ext = ".gif";
+                break;
+            default:
+                return BadRequest(new { ok = false, error = "Only JPG, PNG, WebP, or GIF images are allowed." });
+        }
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        if (user is null)
+            return NotFound(new { ok = false, error = "User not found." });
+
+        var webRoot = _env.WebRootPath ?? throw new InvalidOperationException("WebRootPath is not set.");
+        var dir = Path.Combine(webRoot, "uploads", "profiles");
+        Directory.CreateDirectory(dir);
+
+        RemoveExistingUserProfileFiles(dir, userId);
+
+        var fileName = $"{userId}{ext}";
+        var physical = Path.Combine(dir, fileName);
+        var relative = $"/uploads/profiles/{fileName}";
+
+        await using (var stream = System.IO.File.Create(physical))
+        {
+            await photo.CopyToAsync(stream, cancellationToken);
+        }
+
+        user.ProfilePhotoPath = relative;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Json(new { ok = true, url = relative });
+    }
+
+    private static void RemoveExistingUserProfileFiles(string dir, int userId)
+    {
+        var key = userId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        foreach (var f in Directory.GetFiles(dir))
+        {
+            if (!string.Equals(Path.GetFileNameWithoutExtension(f), key, StringComparison.Ordinal))
+                continue;
+
+            try
+            {
+                System.IO.File.Delete(f);
+            }
+            catch
+            {
+                // ignore locked files
+            }
+        }
     }
 
     private static IQueryable<Project> ApplyClientProjectOfficeScope(IQueryable<Project> query, User? user)

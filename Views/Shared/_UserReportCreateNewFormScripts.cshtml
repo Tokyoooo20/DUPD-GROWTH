@@ -137,23 +137,23 @@
                         if (dupEl && typeof bootstrap !== 'undefined') {
                             bootstrap.Modal.getOrCreateInstance(dupEl).show();
                         } else {
-                            showCreateNewToast(result.data.message || 'This priority number is already in use.', 'error');
+                            showAppNotification(result.data.message || 'This priority number is already in use.', 'error');
                         }
                         return;
                     }
                     if (result.ok && result.data.success) {
-                        showCreateNewToast('Project saved as endorsed!', 'success');
+                        showAppNotification('Project saved as endorsed!', 'success');
                         setTimeout(function () {
                             resetCreateNewForm();
                             window.location.href = '/Pages/User/Dashboard';
                         }, 1500);
                     } else {
                         var errors = (result.data.errors || []).join('\n');
-                        showCreateNewToast(errors || 'Save failed. Please try again.', 'error');
+                        showAppNotification(errors || 'Save failed. Please try again.', 'error');
                     }
                 })
                 .catch(function (err) {
-                    showCreateNewToast('An error occurred while saving.', 'error');
+                    showAppNotification('An error occurred while saving.', 'error');
                     console.error(err);
                 })
                 .finally(function () {
@@ -161,31 +161,6 @@
                     updateAddProgramSaveButtonLabel();
                 });
             });
-        }
-
-        function showCreateNewToast(message, type) {
-            var existing = document.getElementById('createNewToast');
-            if (existing) existing.remove();
-
-            var toastEl = document.createElement('div');
-            toastEl.id = 'createNewToast';
-            toastEl.setAttribute('role', 'alert');
-            toastEl.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;min-width:280px;max-width:400px;padding:14px 20px;border-radius:8px;font-size:14px;font-weight:500;color:#fff;opacity:0;transition:opacity 0.3s;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
-            toastEl.textContent = message;
-
-            if (type === 'success') {
-                toastEl.style.backgroundColor = '#198754';
-            } else {
-                toastEl.style.backgroundColor = '#dc3545';
-            }
-
-            document.body.appendChild(toastEl);
-            requestAnimationFrame(function () { toastEl.style.opacity = '1'; });
-
-            setTimeout(function () {
-                toastEl.style.opacity = '0';
-                setTimeout(function () { toastEl.remove(); }, 300);
-            }, 2500);
         }
 
         if (cancelBtn && cancelModal) {
