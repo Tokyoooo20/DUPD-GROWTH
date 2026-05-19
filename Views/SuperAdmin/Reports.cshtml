@@ -1,4 +1,4 @@
-@* Super Admin PAP list at /Pages/Reports (Priority No. column; no client-only toolbar). *@
+@* Super Admin Reports: PAP table from DB table `projects` (Priority No. column; KPI + growth filter; row edit off). *@
 @model DupdGrowth.Web.Models.DashboardDetailViewModel
 @using Microsoft.AspNetCore.Mvc.ViewFeatures
 @{
@@ -10,7 +10,35 @@
     <link rel="stylesheet" href="~/css/SuperAdmin/superadmin-dashboard.css" asp-append-version="true" />
 }
 @await Html.PartialAsync("_DashboardDetailPageBody", Model, papTableViewData)
+@{
+    var reportsCompletionPhotoModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "reportsCompletionPhotoModal",
+        ["ModalTitle"] = "Completion photo",
+        ["ModalSize"] = "modal-lg",
+        ["ModalScrollable"] = true,
+        ["ModalBody"] = "<div class=\"text-center px-2 pb-1\"><img id=\"reportsCompletionPhotoPreviewImg\" src=\"\" alt=\"Completion photo\" class=\"img-fluid rounded border bg-light\" style=\"max-height: 75vh; width: auto; object-fit: contain;\" /></div>",
+        ["ModalShowPrimaryButton"] = false,
+        ["ModalSecondaryText"] = "Close",
+    };
+}
+@await Html.PartialAsync("Modal", null, reportsCompletionPhotoModal)
 @section Scripts {
     <script src="~/js/dashboard-charts.js" asp-append-version="true"></script>
     @await Html.PartialAsync("_DashboardPapDetailPageScripts")
+    <script>
+        (function () {
+            var photoModalEl = document.getElementById('reportsCompletionPhotoModal');
+            var photoImg = document.getElementById('reportsCompletionPhotoPreviewImg');
+            if (!photoModalEl || !photoImg || typeof bootstrap === 'undefined') return;
+            photoModalEl.addEventListener('show.bs.modal', function (e) {
+                var t = e.relatedTarget;
+                var url = t && t.getAttribute ? t.getAttribute('data-completion-photo-url') : null;
+                if (url) photoImg.src = url;
+            });
+            photoModalEl.addEventListener('hidden.bs.modal', function () {
+                photoImg.removeAttribute('src');
+            });
+        })();
+    </script>
 }

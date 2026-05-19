@@ -116,6 +116,10 @@ public static class DashboardPapRowCompletion
 public class DashboardPapRow
 {
     public int Id { get; init; }
+
+    /// <summary>When set (DB-backed rows), shown in the Priority No. column; otherwise the table uses page order.</summary>
+    public int? PriorityNo { get; init; }
+
     public string Name { get; init; } = "";
     public string ResponsiblePerson { get; init; } = "";
     public string BudgetAllocation { get; init; } = "";

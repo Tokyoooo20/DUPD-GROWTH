@@ -24,9 +24,9 @@ public static class PapStatusGrowthChart
         var notStarted = 0;
         foreach (var p in projects)
         {
-            if (RowHasAnyCompletedQuarter(p)) completed++;
-            if (RowHasAnyOngoingQuarter(p)) ongoing++;
-            if (RowHasAnyNotStartedQuarter(p)) notStarted++;
+            if (HasAnyCompletedQuarter(p)) completed++;
+            if (HasAnyOngoingQuarter(p)) ongoing++;
+            if (HasAnyNotStartedQuarter(p)) notStarted++;
         }
 
         return (completed, ongoing, notStarted);
@@ -56,11 +56,11 @@ public static class PapStatusGrowthChart
             IncrementIfQuarterCompleted(p.StatusQ2, idx, completedQuartersPerPillar);
             IncrementIfQuarterCompleted(p.StatusQ3, idx, completedQuartersPerPillar);
             IncrementIfQuarterCompleted(p.StatusQ4, idx, completedQuartersPerPillar);
-            if (RowHasAnyNotStartedQuarter(p))
+            if (HasAnyNotStartedQuarter(p))
                 notYetStarted[idx]++;
-            if (RowHasAnyOngoingQuarter(p))
+            if (HasAnyOngoingQuarter(p))
                 ongoing[idx]++;
-            if (RowHasAnyCompletedQuarter(p))
+            if (HasAnyCompletedQuarter(p))
                 completed[idx]++;
         }
 
@@ -83,15 +83,18 @@ public static class PapStatusGrowthChart
             completedQuarterCounts[letterIndex]++;
     }
 
-    private static bool RowHasAnyCompletedQuarter(Project p) =>
+    /// <summary>Used by admin Reports / KPI segment lists (≥1 quarter Completed).</summary>
+    public static bool HasAnyCompletedQuarter(Project p) =>
         QuarterIsCompleted(p.StatusQ1) || QuarterIsCompleted(p.StatusQ2)
         || QuarterIsCompleted(p.StatusQ3) || QuarterIsCompleted(p.StatusQ4);
 
-    private static bool RowHasAnyOngoingQuarter(Project p) =>
+    /// <summary>Used by admin Reports / KPI segment lists (≥1 quarter ongoing).</summary>
+    public static bool HasAnyOngoingQuarter(Project p) =>
         QuarterIsOngoing(p.StatusQ1) || QuarterIsOngoing(p.StatusQ2)
         || QuarterIsOngoing(p.StatusQ3) || QuarterIsOngoing(p.StatusQ4);
 
-    private static bool RowHasAnyNotStartedQuarter(Project p) =>
+    /// <summary>Used by admin Reports / KPI segment lists (≥1 quarter not yet started).</summary>
+    public static bool HasAnyNotStartedQuarter(Project p) =>
         QuarterIsNotYetStarted(p.StatusQ1) || QuarterIsNotYetStarted(p.StatusQ2)
         || QuarterIsNotYetStarted(p.StatusQ3) || QuarterIsNotYetStarted(p.StatusQ4);
 

@@ -32,7 +32,7 @@ else
         <tr>
             @if (showPriorityNoColumn)
             {
-                <td class="dashboard-pap-col-priority text-center text-body-secondary small" aria-label="Priority number">@(priorityBase + priorityIndex)</td>
+                <td class="dashboard-pap-col-priority text-center text-body-secondary small" aria-label="Priority number">@(row.PriorityNo ?? (priorityBase + priorityIndex))</td>
             }
             <td class="dashboard-pap-col-pap dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--pap"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.Name" title="@row.Name" readonly autocomplete="off" aria-label="PAP name" /></td>
             <td class="dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--md"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.ResponsiblePerson" title="@row.ResponsiblePerson" readonly autocomplete="off" aria-label="Responsible person" /></td>

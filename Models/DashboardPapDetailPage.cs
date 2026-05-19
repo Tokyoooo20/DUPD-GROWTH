@@ -5,7 +5,7 @@ public static class DashboardPapDetailPage
 {
     public static readonly int[] YearOptions = [2026, 2025, 2024, 2023];
 
-    private const int PapListPageSize = 10;
+    public const int PapListPageSize = 10;
 
     private static readonly IReadOnlyList<DashboardPapRow> SamplePaps =
     [

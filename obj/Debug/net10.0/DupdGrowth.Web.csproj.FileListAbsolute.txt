@@ -283,7 +283,6 @@ C:\DUPD - GROWTH\obj\Debug\net10.0\refint\DupdGrowth.Web.dll
 C:\DUPD - GROWTH\obj\Debug\net10.0\DupdGrowth.Web.pdb
 C:\DUPD - GROWTH\obj\Debug\net10.0\DupdGrowth.Web.genruntimeconfig.cache
 C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\at2wkvir49-{0}-hwpwlciho6-hwpwlciho6.gz
-C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\ogup8fzdml-{0}-c34cgnnusg-c34cgnnusg.gz
 C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\2rzjf4gu1g-{0}-ho0d1k5s6r-ho0d1k5s6r.gz
 c:\DUPD - GROWTH\obj\Debug\net10.0\compressed\bdtxnvalgm-{0}-a0ee62u221-a0ee62u221.gz
 c:\DUPD - GROWTH\obj\Debug\net10.0\compressed\hpmzhxszdw-{0}-oudwy4s092-oudwy4s092.gz
@@ -8707,3 +8706,5 @@ c:\DUPD - GROWTH\bin-verify-build2\runtimes\win-x64\native\krb5_64.dll
 c:\DUPD - GROWTH\bin-verify-build2\runtimes\win-x64\native\krbcc64.dll
 c:\DUPD - GROWTH\bin-verify-build2\runtimes\win\lib\net8.0\System.Windows.Extensions.dll
 c:\DUPD - GROWTH\obj\Debug\net10.0\compressed\kbw968z4l0-{0}-ewugw09vhh-ewugw09vhh.gz
+c:\DUPD - GROWTH\obj\Debug\net10.0\compressed\ogup8fzdml-{0}-rnh5fu3tbi-rnh5fu3tbi.gz
+C:\DUPD - GROWTH\obj\Debug\net10.0\compressed\c0rnww3ff5-{0}-zhqc1bkvgd-zhqc1bkvgd.gz
