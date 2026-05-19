@@ -3,7 +3,7 @@
  */
 (function () {
     var wrap = document.querySelector('.app-sidebar-profile-wrap');
-    if (!wrap) return;
+    if (!wrap || wrap.classList.contains('app-sidebar-profile-wrap--static')) return;
 
     var trigger = wrap.querySelector('.app-sidebar-profile-trigger');
     var panel = wrap.querySelector('.app-sidebar-profile-panel');

@@ -1,8 +1,36 @@
-@* Upload + popover behavior: wwwroot/js/sidebar-profile.js. Toasts: showAppNotification (app-notification.js → Notification.cshtml). *@
+@* Admin sidebar: set SuppressProfilePanel via SidebarProfileBrand so no popover/modal. Client: sidebar-profile.js + optional upload. *@
 @model DupdGrowth.Web.Models.SidebarProfileBrandViewModel
 @{
     var uploadUrl = Url.Action("UploadProfilePhoto", "Client");
 }
+@if (Model.SuppressProfilePanel)
+{
+    <div class="app-sidebar-brand app-sidebar-profile-wrap app-sidebar-profile-wrap--static">
+        <div class="app-sidebar-profile-trigger app-sidebar-profile-trigger--static" aria-hidden="true">
+            <div class="app-sidebar-profile-trigger-thumb" id="sidebarProfileTriggerThumb">
+                @if (!string.IsNullOrEmpty(Model.ProfilePhotoUrl))
+                {
+                    <img class="app-sidebar-profile-trigger-photo"
+                         src="@Model.ProfilePhotoUrl"
+                         alt=""
+                         width="32"
+                         height="32"
+                         loading="eager" />
+                }
+                else
+                {
+                    <i class="bi bi-person-circle app-sidebar-profile-trigger-icon"
+                       aria-hidden="true"></i>
+                }
+            </div>
+            <div class="app-sidebar-brand-text">
+                <span class="app-sidebar-title app-sidebar-profile-office-label">@Model.OfficeName</span>
+            </div>
+        </div>
+    </div>
+}
+else
+{
 <div class="app-sidebar-brand app-sidebar-profile-wrap">
     <button type="button"
             class="app-sidebar-profile-trigger"
@@ -120,4 +148,5 @@
         ["ModalCloseButtonClass"] = "btn-close btn-close-white",
     };
     @await Html.PartialAsync("Modal", null, intentModal)
+}
 }

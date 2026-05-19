@@ -15,4 +15,7 @@ public class SidebarProfileBrandViewModel
 
     /// <summary>False for built-in admin identity (non-numeric user id).</summary>
     public bool CanUploadProfilePhoto { get; init; }
+
+    /// <summary>When true (e.g. Super Admin sidebar), profile trigger does not open a panel or upload modal.</summary>
+    public bool SuppressProfilePanel { get; set; }
 }

@@ -37,6 +37,9 @@
                 <header class="dashboard-page-header mb-2 mb-lg-3">
                     <h1 class="dashboard-page-title">OFFICE MANAGEMENT</h1>
                 </header>
+                <div class="d-none" aria-hidden="true">
+                    @Html.AntiForgeryToken()
+                </div>
                 <div class="card dashboard-card border-0 shadow-sm">
                     <div class="dashboard-card__body p-0">
                         <div class="office-table-toolbar border-bottom py-3 px-3 px-md-4 bg-white">
@@ -54,9 +57,9 @@
                                     </div>
                                 </div>
                                 <div class="flex-shrink-0" style="width: 100%; max-width: 22rem;">
-                                    <label class="form-label small text-body-secondary mb-1" for="officeTopLevelFilter">Top-level office</label>
-                                    <select class="form-select" id="officeTopLevelFilter" aria-label="Filter by top-level office">
-                                        <option value="">All top-level offices</option>
+                                    <label class="form-label small text-body-secondary mb-1" for="officeTopLevelFilter">Offices</label>
+                                    <select class="form-select" id="officeTopLevelFilter" aria-label="Filter by office">
+                                        <option value="">Top level offices</option>
                                     </select>
                                 </div>
                             </div>
@@ -96,25 +99,81 @@
                 ["ModalPrimaryButtonId"] = "officeModalSaveBtn",
                 ["ModalPrimaryDismiss"] = false,
             };
+            var confirmDeleteOfficeModalBody =
+                "<p class=\"mb-0\" id=\"officeDeleteConfirmMessage\"></p>";
+            var confirmDeleteOfficeModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+            {
+                ["ModalId"] = "confirmDeleteOfficeModal",
+                ["ModalTitle"] = "Delete office?",
+                ["ModalBody"] = confirmDeleteOfficeModalBody,
+                ["ModalPrimaryText"] = "Delete",
+                ["ModalSecondaryText"] = "Cancel",
+                ["ModalPrimaryButtonId"] = "officeDeleteConfirmBtn",
+                ["ModalPrimaryButtonClass"] = "btn btn-danger",
+                ["ModalPrimaryDismiss"] = false,
+            };
+            var confirmSaveOfficeModalBody =
+                "<p class=\"mb-0\" id=\"officeSaveConfirmMessage\"></p>";
+            var confirmSaveOfficeModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+            {
+                ["ModalId"] = "confirmSaveOfficeModal",
+                ["ModalTitle"] = "Save office?",
+                ["ModalBody"] = confirmSaveOfficeModalBody,
+                ["ModalPrimaryText"] = "Yes, save",
+                ["ModalSecondaryText"] = "Cancel",
+                ["ModalPrimaryButtonId"] = "officeSaveConfirmBtn",
+                ["ModalPrimaryDismiss"] = false,
+            };
         }
         @await Html.PartialAsync("Modal", null, addOfficeModal)
+        @await Html.PartialAsync("Modal", null, confirmDeleteOfficeModal)
+        @await Html.PartialAsync("Modal", null, confirmSaveOfficeModal)
     </div>
 </div>
 @section Scripts {
+    <script type="application/json" id="offices-data-json">@Html.Raw(ViewData["OfficesJson"] ?? "[]")</script>
+    @{
+        var officeApiUrls = new
+        {
+            createSubOffice = Url.Action("CreateSubOffice", "OfficeManagement"),
+            updateOffice = Url.Action("UpdateOffice", "OfficeManagement"),
+            deleteOffice = Url.Action("DeleteOffice", "OfficeManagement"),
+        };
+    }
+    <script>
+        window.officeManagementApi = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(officeApiUrls));
+    </script>
     <script>
         (function () {
             /**
-             * Frontend-only office list: { id: number, name: string, parent_id: number | null }
+             * All office rows from `offices` (single JSON). Top-level filter = only `parent_id === null` (SQL NULL).
              */
-            var offices = [
-                { id: 1, name: 'Office of the University President', parent_id: null },
-                { id: 2, name: 'Office of the Vice President for Academic Affairs', parent_id: null },
-                { id: 3, name: 'Office of the Vice President for Finance and Administration', parent_id: null },
-                { id: 4, name: 'Office of the Vice President for Research, Innovation and Extension', parent_id: null },
-                { id: 5, name: 'Office of the Vice President for Global Affairs and Strategic Operations', parent_id: null },
-                { id: 6, name: 'Office of the Chancellor', parent_id: null }
-            ];
-            var nextOfficeId = 7;
+            var officesDataEl = document.getElementById('offices-data-json');
+            var offices = [];
+            function normalizeOfficeRow(raw) {
+                var pid = raw.parent_id;
+                if (pid === undefined && raw.parentId !== undefined) {
+                    pid = raw.parentId;
+                }
+                return { id: raw.id, name: raw.name != null ? String(raw.name) : '', parent_id: pid };
+            }
+
+            if (officesDataEl && officesDataEl.textContent) {
+                try {
+                    offices = JSON.parse(officesDataEl.textContent);
+                } catch (e) {
+                    offices = [];
+                }
+            }
+            if (!Array.isArray(offices)) {
+                offices = [];
+            }
+            offices = offices.map(normalizeOfficeRow);
+
+            var nextOfficeId = offices.reduce(function (max, o) {
+                var n = parseInt(String(o.id), 10);
+                return isNaN(n) ? max : Math.max(max, n);
+            }, 0) + 1;
 
             var tbody = document.getElementById('officeTreeBody');
             var emptyHint = document.getElementById('officeTreeEmpty');
@@ -126,13 +185,51 @@
             var editIdInput = document.getElementById('officeModalEditId');
             var parentIdInput = document.getElementById('officeModalParentId');
             var saveBtn = document.getElementById('officeModalSaveBtn');
+            var confirmDeleteModalEl = document.getElementById('confirmDeleteOfficeModal');
+            var officeDeleteConfirmMessageEl = document.getElementById('officeDeleteConfirmMessage');
+            var officeDeleteConfirmBtn = document.getElementById('officeDeleteConfirmBtn');
+            var pendingDeleteOffice = null;
+            var confirmSaveModalEl = document.getElementById('confirmSaveOfficeModal');
+            var officeSaveConfirmMessageEl = document.getElementById('officeSaveConfirmMessage');
+            var officeSaveConfirmBtn = document.getElementById('officeSaveConfirmBtn');
+            var saveConfirmCommitted = false;
+
+            function notifySuccess(message) {
+                if (typeof window.showAppNotification === 'function') {
+                    window.showAppNotification(message, 'success');
+                }
+            }
+
+            function notifyError(message) {
+                if (typeof window.showAppNotification === 'function') {
+                    window.showAppNotification(message, 'error');
+                }
+            }
 
             function sortByName(a, b) {
                 return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
             }
 
+            /** Matches DB: `offices.parent_id` IS NULL (JSON null) only — not 0, not "", not undefined. */
+            function isRootOfficeRow(o) {
+                return o != null && o.parent_id === null;
+            }
+
+            /** Top Level Offices dropdown: same list as true parent rows from the main payload (no second source). */
+            function getDropdownTopLevelOptions() {
+                return offices.filter(isRootOfficeRow).sort(sortByName);
+            }
+
             function getChildren(parentId) {
-                return offices.filter(function (o) { return o.parent_id === parentId; }).sort(sortByName);
+                return offices.filter(function (o) {
+                    if (parentId == null || parentId === undefined) {
+                        return isRootOfficeRow(o);
+                    }
+                    if (isRootOfficeRow(o)) {
+                        return false;
+                    }
+                    return Number(o.parent_id) === Number(parentId);
+                }).sort(sortByName);
             }
 
             function getDescendantIds(officeId) {
@@ -153,8 +250,8 @@
                     return null;
                 }
                 var set = {};
-                set[rid] = true;
-                getDescendantIds(rid).forEach(function (id) { set[id] = true; });
+                set[Number(rid)] = true;
+                getDescendantIds(rid).forEach(function (id) { set[Number(id)] = true; });
                 return set;
             }
 
@@ -164,15 +261,15 @@
                 topLevelFilter.innerHTML = '';
                 var allOpt = document.createElement('option');
                 allOpt.value = '';
-                allOpt.textContent = 'All top-level offices';
+                allOpt.textContent = 'Top level offices';
                 topLevelFilter.appendChild(allOpt);
-                getChildren(null).forEach(function (o) {
+                getDropdownTopLevelOptions().forEach(function (o) {
                     var opt = document.createElement('option');
                     opt.value = String(o.id);
                     opt.textContent = o.name;
                     topLevelFilter.appendChild(opt);
                 });
-                if (prev && offices.some(function (o) { return String(o.id) === prev && o.parent_id === null; })) {
+                if (prev && getDropdownTopLevelOptions().some(function (o) { return String(o.id) === prev; })) {
                     topLevelFilter.value = prev;
                 } else {
                     topLevelFilter.value = '';
@@ -185,13 +282,23 @@
 
                 var q = (searchInput && searchInput.value || '').trim().toLowerCase();
                 var filterRootVal = topLevelFilter ? topLevelFilter.value : '';
+                if (filterRootVal) {
+                    var checkId = parseInt(filterRootVal, 10);
+                    var picked = offices.filter(function (x) { return Number(x.id) === checkId; })[0];
+                    if (!picked || !isRootOfficeRow(picked)) {
+                        filterRootVal = '';
+                        if (topLevelFilter) {
+                            topLevelFilter.value = '';
+                        }
+                    }
+                }
                 var allowed = getAllowedIdSet(filterRootVal);
 
                 function officeInScope(o) {
                     if (!allowed) {
                         return true;
                     }
-                    return !!allowed[o.id];
+                    return !!allowed[Number(o.id)];
                 }
 
                 function appendRow(o) {
@@ -230,12 +337,20 @@
                     btnDel.setAttribute('data-office-id', String(o.id));
 
                     btnDel.addEventListener('click', function () {
-                        if (!confirm('Delete “' + o.name + '” and all sub-offices under it?')) return;
-                        var remove = [o.id].concat(getDescendantIds(o.id));
-                        var removeSet = {};
-                        remove.forEach(function (id) { removeSet[id] = true; });
-                        offices = offices.filter(function (x) { return !removeSet[x.id]; });
-                        renderOfficeRows();
+                        pendingDeleteOffice = o;
+                        if (officeDeleteConfirmMessageEl) {
+                            var subCount = getDescendantIds(o.id).length;
+                            var subPhrase = subCount ? ' This will also remove ' + subCount + ' sub-office' + (subCount === 1 ? '' : 's') + ' under it.' : '';
+                            officeDeleteConfirmMessageEl.textContent =
+                                'Are you sure you want to delete “' + o.name + '”?' + subPhrase + ' This cannot be undone.';
+                        }
+                        if (confirmDeleteModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                            var delModal = bootstrap.Modal.getOrCreateInstance(confirmDeleteModalEl);
+                            delModal.show();
+                        } else {
+                            notifyError('Confirmation dialog could not be opened.');
+                            pendingDeleteOffice = null;
+                        }
                     });
 
                     tdAct.appendChild(btnSub);
@@ -261,23 +376,32 @@
                     });
                 }
 
-                if (q) {
-                    var matched = offices.filter(function (o) {
-                        if (!officeInScope(o)) {
-                            return false;
+                if (filterRootVal) {
+                    if (q) {
+                        var matchedBranch = offices.filter(function (o) {
+                            if (!officeInScope(o)) {
+                                return false;
+                            }
+                            return o.name.toLowerCase().indexOf(q) >= 0;
+                        }).sort(sortByName);
+                        matchedBranch.forEach(appendRow);
+                    } else {
+                        var rootId = parseInt(filterRootVal, 10);
+                        var rootOffice = offices.filter(function (x) { return Number(x.id) === rootId; })[0];
+                        if (rootOffice && officeInScope(rootOffice)) {
+                            appendRow(rootOffice);
+                            walkTree(Number(rootOffice.id));
                         }
-                        return o.name.toLowerCase().indexOf(q) >= 0;
-                    }).sort(sortByName);
-                    matched.forEach(appendRow);
-                } else if (filterRootVal) {
-                    var rootId = parseInt(filterRootVal, 10);
-                    var rootOffice = offices.filter(function (x) { return x.id === rootId; })[0];
-                    if (rootOffice && officeInScope(rootOffice)) {
-                        appendRow(rootOffice);
-                        walkTree(rootOffice.id);
                     }
                 } else {
-                    walkTree(null);
+                    /* "Top level offices" — only rows with parent_id NULL (no children in this view). */
+                    var rootsOnly = getDropdownTopLevelOptions();
+                    if (q) {
+                        rootsOnly = rootsOnly.filter(function (o) {
+                            return o.name.toLowerCase().indexOf(q) >= 0;
+                        });
+                    }
+                    rootsOnly.forEach(appendRow);
                 }
 
                 refreshTopLevelDropdown();
@@ -289,7 +413,7 @@
                         emptyHint.innerHTML = 'No offices to display.';
                     } else if (rowCount === 0) {
                         emptyHint.classList.remove('d-none');
-                        emptyHint.innerHTML = 'No offices match your search or filter. Try clearing the search or choosing <strong>All top-level offices</strong>.';
+                        emptyHint.innerHTML = 'No offices match your search or filter. Try clearing the search or choosing <strong>Top level offices</strong>.';
                     } else {
                         emptyHint.classList.add('d-none');
                     }
@@ -324,7 +448,10 @@
 
             if (modalEl) {
                 modalEl.addEventListener('show.bs.modal', function (event) {
-                    openModalSetup(event.relatedTarget);
+                    /* Only reset fields when opened from a table button — not when restoring after confirm cancel. */
+                    if (event.relatedTarget) {
+                        openModalSetup(event.relatedTarget);
+                    }
                 });
             }
 
@@ -340,38 +467,253 @@
                 });
             }
 
+            function getCsrfToken() {
+                var el = document.querySelector('input[name="__RequestVerificationToken"]');
+                return el ? el.value : '';
+            }
+
+            function refreshNextOfficeIdFromOffices() {
+                nextOfficeId = offices.reduce(function (max, o) {
+                    var n = parseInt(String(o.id), 10);
+                    return isNaN(n) ? max : Math.max(max, n);
+                }, 0) + 1;
+            }
+
+            async function parseJsonResponse(res) {
+                var text = await res.text();
+                if (!text) return {};
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    return {};
+                }
+            }
+
+            async function performOfficeSaveFromForm() {
+                var api = window.officeManagementApi;
+                if (!api || !api.createSubOffice || !api.updateOffice) {
+                    notifyError('Office save is not configured.');
+                    return false;
+                }
+
+                var token = getCsrfToken();
+                if (!token) {
+                    notifyError('Security token missing. Refresh the page and try again.');
+                    return false;
+                }
+
+                var name = (nameInput.value || '').trim();
+                if (!name) {
+                    notifyError('Please enter an office name.');
+                    nameInput.focus();
+                    return false;
+                }
+
+                var editId = editIdInput.value ? parseInt(editIdInput.value, 10) : null;
+
+                if (editId) {
+                    try {
+                        var res = await fetch(api.updateOffice, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': token
+                            },
+                            body: JSON.stringify({ id: editId, officeName: name })
+                        });
+                        var data = await parseJsonResponse(res);
+                        if (!res.ok) {
+                            var errs = data.errors;
+                            var msg = Array.isArray(errs) && errs.length ? errs.join(' ') : (data.message || 'Could not update office.');
+                            notifyError(msg);
+                            return false;
+                        }
+                        var target = offices.filter(function (x) { return Number(x.id) === editId; })[0];
+                        if (target && data.office) {
+                            target.name = data.office.name;
+                        }
+                        notifySuccess(data.message || 'Office updated successfully.');
+                        renderOfficeRows();
+                        return true;
+                    } catch (e) {
+                        notifyError('Could not reach the server. Check your connection and try again.');
+                        return false;
+                    }
+                }
+
+                var pv = parentIdInput ? parentIdInput.value : '';
+                var parent_id = pv === '' || pv == null ? null : parseInt(pv, 10);
+                if (parent_id == null || isNaN(parent_id)) {
+                    notifyError('A parent office is required to add a sub-office.');
+                    return false;
+                }
+
+                try {
+                    var res2 = await fetch(api.createSubOffice, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify({ officeName: name, parentOfficeId: parent_id })
+                    });
+                    var data2 = await parseJsonResponse(res2);
+                    if (!res2.ok) {
+                        var errs2 = data2.errors;
+                        var msg2 = Array.isArray(errs2) && errs2.length ? errs2.join(' ') : (data2.message || 'Could not create sub-office.');
+                        notifyError(msg2);
+                        return false;
+                    }
+                    if (data2.office) {
+                        offices.push(normalizeOfficeRow(data2.office));
+                        refreshNextOfficeIdFromOffices();
+                    }
+                    notifySuccess(data2.message || 'Sub-office added successfully.');
+                    renderOfficeRows();
+                    return true;
+                } catch (e) {
+                    notifyError('Could not reach the server. Check your connection and try again.');
+                    return false;
+                }
+            }
+
             if (saveBtn) {
                 saveBtn.addEventListener('click', function () {
                     var name = (nameInput.value || '').trim();
                     if (!name) {
+                        notifyError('Please enter an office name.');
                         nameInput.focus();
                         return;
                     }
 
                     var editId = editIdInput.value ? parseInt(editIdInput.value, 10) : null;
 
-                    if (editId) {
-                        var target = offices.filter(function (x) { return x.id === editId; })[0];
-                        if (target) {
-                            target.name = name;
-                        }
-                    } else {
+                    if (!editId) {
                         var pv = parentIdInput ? parentIdInput.value : '';
                         var parent_id = pv === '' || pv == null ? null : parseInt(pv, 10);
                         if (parent_id == null || isNaN(parent_id)) {
+                            notifyError('A parent office is required to add a sub-office.');
                             return;
                         }
-                        offices.push({
-                            id: nextOfficeId++,
-                            name: name,
-                            parent_id: parent_id
-                        });
                     }
 
-                    renderOfficeRows();
+                    if (officeSaveConfirmMessageEl) {
+                        if (editId) {
+                            var existing = offices.filter(function (x) { return x.id === editId; })[0];
+                            var prevName = existing ? existing.name : '';
+                            officeSaveConfirmMessageEl.textContent =
+                                'Are you sure you want to save changes to this office? The name will be updated from “' +
+                                prevName + '” to “' + name + '”.';
+                        } else {
+                            var pv2 = parentIdInput ? parentIdInput.value : '';
+                            var pid = parseInt(pv2, 10);
+                            var parentOffice = offices.filter(function (x) { return Number(x.id) === pid; })[0];
+                            var parentLabel = parentOffice ? parentOffice.name : 'the selected parent';
+                            officeSaveConfirmMessageEl.textContent =
+                                'Are you sure you want to add the sub-office “' + name + '” under “' + parentLabel + '”?';
+                        }
+                    }
 
-                    var modal = bootstrap.Modal.getInstance(modalEl);
-                    if (modal) modal.hide();
+                    if (!confirmSaveModalEl || typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+                        notifyError('Confirmation dialog could not be opened.');
+                        return;
+                    }
+
+                    saveConfirmCommitted = false;
+                    var addModal = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+                    var sm = bootstrap.Modal.getOrCreateInstance(confirmSaveModalEl);
+
+                    var onAddHidden = function () {
+                        modalEl.removeEventListener('hidden.bs.modal', onAddHidden);
+                        sm.show();
+                    };
+                    modalEl.addEventListener('hidden.bs.modal', onAddHidden);
+                    addModal.hide();
+                });
+            }
+
+            if (officeSaveConfirmBtn && confirmSaveModalEl) {
+                officeSaveConfirmBtn.addEventListener('click', async function () {
+                    var ok = await performOfficeSaveFromForm();
+                    if (ok) {
+                        saveConfirmCommitted = true;
+                    }
+                    var sm = bootstrap.Modal.getInstance(confirmSaveModalEl);
+                    if (sm) sm.hide();
+                });
+
+                confirmSaveModalEl.addEventListener('hidden.bs.modal', function () {
+                    if (!saveConfirmCommitted && modalEl) {
+                        var addModal = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+                        addModal.show();
+                    }
+                    saveConfirmCommitted = false;
+                });
+            }
+
+            if (officeDeleteConfirmBtn && confirmDeleteModalEl) {
+                officeDeleteConfirmBtn.addEventListener('click', async function () {
+                    if (!pendingDeleteOffice) {
+                        var dm = bootstrap.Modal.getInstance(confirmDeleteModalEl);
+                        if (dm) dm.hide();
+                        return;
+                    }
+                    var o = pendingDeleteOffice;
+                    var label = o.name;
+                    var api = window.officeManagementApi;
+                    var token = getCsrfToken();
+
+                    if (!api || !api.deleteOffice) {
+                        notifyError('Office delete is not configured.');
+                        pendingDeleteOffice = null;
+                        var dm0 = bootstrap.Modal.getInstance(confirmDeleteModalEl);
+                        if (dm0) dm0.hide();
+                        return;
+                    }
+                    if (!token) {
+                        notifyError('Security token missing. Refresh the page and try again.');
+                        pendingDeleteOffice = null;
+                        var dm1 = bootstrap.Modal.getInstance(confirmDeleteModalEl);
+                        if (dm1) dm1.hide();
+                        return;
+                    }
+
+                    try {
+                        var res = await fetch(api.deleteOffice, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': token
+                            },
+                            body: JSON.stringify({ id: Number(o.id) })
+                        });
+                        var data = await parseJsonResponse(res);
+                        if (!res.ok) {
+                            var errs = data.errors;
+                            var msg = Array.isArray(errs) && errs.length ? errs.join(' ') : (data.message || 'Could not delete office.');
+                            notifyError(msg);
+                        } else {
+                            var remove = [o.id].concat(getDescendantIds(o.id));
+                            var removeSet = {};
+                            remove.forEach(function (id) { removeSet[id] = true; });
+                            offices = offices.filter(function (x) { return !removeSet[x.id]; });
+                            refreshNextOfficeIdFromOffices();
+                            renderOfficeRows();
+                            notifySuccess(data.message || '“' + label + '” was removed.');
+                        }
+                    } catch (err) {
+                        notifyError('Could not reach the server. Check your connection and try again.');
+                    }
+
+                    pendingDeleteOffice = null;
+                    var delModal = bootstrap.Modal.getInstance(confirmDeleteModalEl);
+                    if (delModal) delModal.hide();
+                });
+                confirmDeleteModalEl.addEventListener('hidden.bs.modal', function () {
+                    pendingDeleteOffice = null;
                 });
             }
 

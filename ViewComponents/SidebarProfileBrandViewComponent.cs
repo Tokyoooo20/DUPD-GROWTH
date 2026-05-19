@@ -13,12 +13,12 @@ public class SidebarProfileBrandViewComponent : ViewComponent
         _db = db;
     }
 
-    public async Task<IViewComponentResult> InvokeAsync()
+    public async Task<IViewComponentResult> InvokeAsync(bool suppressProfilePanel = false)
     {
         var principal = ViewContext.HttpContext.User;
         var fallback = ViewContext.ViewData["SidebarUserName"] as string;
         var vm = await UserProfileSnapshot.CreateAsync(principal, _db, fallback);
-
+        vm.SuppressProfilePanel = suppressProfilePanel;
         return View("~/Views/Client/Profile.cshtml", vm);
     }
 }

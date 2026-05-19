@@ -3,7 +3,7 @@
 }
 
 <aside class="app-sidebar">
-    @await Component.InvokeAsync("SidebarProfileBrand")
+    @await Component.InvokeAsync("SidebarProfileBrand", new { suppressProfilePanel = true })
     <div class="app-sidebar-scroll">
         <nav class="app-sidebar-nav" aria-label="Main">
             <a class="app-sidebar-link text-decoration-none @(active == "dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Dashboard">
