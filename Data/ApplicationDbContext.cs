@@ -43,6 +43,7 @@ public class ApplicationDbContext : DbContext
             e.Property(p => p.StatusQ2).HasColumnName("2nd_quarter").HasMaxLength(100);
             e.Property(p => p.StatusQ3).HasColumnName("3rd_quarter").HasMaxLength(100);
             e.Property(p => p.StatusQ4).HasColumnName("4th_quarter").HasMaxLength(100);
+            e.Property(p => p.CompletionPhotoPath).HasColumnName("completion_photo").HasMaxLength(512);
             e.Property(p => p.ProjectStatus).HasColumnName("status").HasMaxLength(50);
             e.Property(p => p.DroppedAt).HasColumnName("dropped_at");
             e.Property(p => p.DraftAt).HasColumnName("draft_at");

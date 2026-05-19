@@ -1,0 +1,60 @@
+@model DupdGrowth.Web.Models.PapCompletionPhotoUploadCellModel
+@{
+    var viewOnly = ViewData["DashboardDetailCompletionPhotoViewOnly"] as bool? ?? false;
+    var completionPhotoPreviewModalId = ViewData["DashboardDetailCompletionPhotoPreviewModalId"] as string;
+    var inputId = $"papCompletionPhoto_{Model.ProjectId}";
+}
+<div class="user-project-completion-photo user-pap-completion-upload">
+    @if (viewOnly)
+    {
+        @if (!string.IsNullOrWhiteSpace(Model.PhotoPath))
+        {
+            @if (!string.IsNullOrWhiteSpace(completionPhotoPreviewModalId))
+            {
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#@completionPhotoPreviewModalId"
+                        data-completion-photo-url="@Model.PhotoPath"
+                        aria-label="View completion photo">View photo</button>
+            }
+            else
+            {
+                <a href="@Model.PhotoPath"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="btn btn-sm btn-outline-secondary"
+                   role="button"
+                   data-pap-completion-photo-link>View photo</a>
+            }
+        }
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(Model.PhotoPath))
+        {
+            <a href="@Model.PhotoPath"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="small d-inline-block mb-1"
+               data-pap-completion-photo-link>View photo</a>
+        }
+        <div class="d-flex flex-column gap-1 align-items-stretch">
+            <input type="file"
+                   id="@inputId"
+                   class="visually-hidden"
+                   accept="image/jpeg,image/png,image/webp,image/gif"
+                   tabindex="-1"
+                   aria-label="Upload completion photo for this project"
+                   data-pap-completion-photo
+                   data-project-id="@Model.ProjectId" />
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary py-0 px-2"
+                    data-pap-completion-photo-trigger
+                    aria-controls="@inputId">
+                @(string.IsNullOrWhiteSpace(Model.PhotoPath) ? "Upload completion photo" : "Replace completion photo")
+            </button>
+            <small class="text-body-secondary d-none" data-pap-completion-photo-hint></small>
+        </div>
+    }
+</div>

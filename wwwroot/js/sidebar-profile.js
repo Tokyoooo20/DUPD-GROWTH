@@ -238,7 +238,7 @@
                     var err =
                         res.body && res.body.error
                             ? String(res.body.error)
-                            : 'Something went wrong. Please try a smaller JPG, PNG, WebP, or GIF (max 5 MB).';
+                            : 'Something went wrong. Please try a smaller JPG, PNG, WebP, or GIF (max 20 MB).';
                     notifyUpload(false, err);
                 }
             })
@@ -282,10 +282,10 @@
         var file = fileInput.files && fileInput.files[0];
         if (!file) return;
 
-        var maxBytes = 5 * 1024 * 1024;
+        var maxBytes = 20 * 1024 * 1024;
         if (file.size > maxBytes) {
             fileInput.value = '';
-            notifyUpload(false, 'Please choose an image under 5 MB.');
+            notifyUpload(false, 'Please choose an image under 20 MB.');
             return;
         }
 

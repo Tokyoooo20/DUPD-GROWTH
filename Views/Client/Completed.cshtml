@@ -17,6 +17,34 @@
     <link rel="stylesheet" href="~/css/User/Completed.css" asp-append-version="true" />
 }
 @await Html.PartialAsync("_DashboardDetailPageBody", Model)
+@{
+    var completedCompletionPhotoModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "completedCompletionPhotoModal",
+        ["ModalTitle"] = "Completion photo",
+        ["ModalSize"] = "modal-lg",
+        ["ModalScrollable"] = true,
+        ["ModalBody"] = "<div class=\"text-center px-2 pb-1\"><img id=\"completedCompletionPhotoPreviewImg\" src=\"\" alt=\"Completion photo\" class=\"img-fluid rounded border bg-light\" style=\"max-height: 75vh; width: auto; object-fit: contain;\" /></div>",
+        ["ModalShowPrimaryButton"] = false,
+        ["ModalSecondaryText"] = "Close",
+    };
+}
+@await Html.PartialAsync("Modal", null, completedCompletionPhotoModal)
 @section Scripts {
     @await Html.PartialAsync("_DashboardPapDetailPageScripts")
+    <script>
+        (function () {
+            var photoModalEl = document.getElementById('completedCompletionPhotoModal');
+            var photoImg = document.getElementById('completedCompletionPhotoPreviewImg');
+            if (!photoModalEl || !photoImg || typeof bootstrap === 'undefined') return;
+            photoModalEl.addEventListener('show.bs.modal', function (e) {
+                var t = e.relatedTarget;
+                var url = t && t.getAttribute ? t.getAttribute('data-completion-photo-url') : null;
+                if (url) photoImg.src = url;
+            });
+            photoModalEl.addEventListener('hidden.bs.modal', function () {
+                photoImg.removeAttribute('src');
+            });
+        })();
+    </script>
 }

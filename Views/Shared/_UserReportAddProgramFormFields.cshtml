@@ -133,7 +133,8 @@
                         <div class="col-6">
                             <label class="form-label small text-body-secondary mb-0" for="userAddPapQ1">1st quarter</label>
                             <select id="userAddPapQ1" class="form-select form-select-sm" aria-label="1st quarter status">
-                                @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                                <option value="">—</option>
+                                @foreach (var o in DashboardPapSelectOptions.QuarterStatusesProgramForm)
                                 {
                                     <option value="@o">@o</option>
                                 }
@@ -142,7 +143,8 @@
                         <div class="col-6">
                             <label class="form-label small text-body-secondary mb-0" for="userAddPapQ2">2nd quarter</label>
                             <select id="userAddPapQ2" class="form-select form-select-sm" aria-label="2nd quarter status">
-                                @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                                <option value="">—</option>
+                                @foreach (var o in DashboardPapSelectOptions.QuarterStatusesProgramForm)
                                 {
                                     <option value="@o">@o</option>
                                 }
@@ -151,7 +153,8 @@
                         <div class="col-6">
                             <label class="form-label small text-body-secondary mb-0" for="userAddPapQ3">3rd quarter</label>
                             <select id="userAddPapQ3" class="form-select form-select-sm" aria-label="3rd quarter status">
-                                @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                                <option value="">—</option>
+                                @foreach (var o in DashboardPapSelectOptions.QuarterStatusesProgramForm)
                                 {
                                     <option value="@o">@o</option>
                                 }
@@ -160,7 +163,8 @@
                         <div class="col-6">
                             <label class="form-label small text-body-secondary mb-0" for="userAddPapQ4">4th quarter</label>
                             <select id="userAddPapQ4" class="form-select form-select-sm" aria-label="4th quarter status">
-                                @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                                <option value="">—</option>
+                                @foreach (var o in DashboardPapSelectOptions.QuarterStatusesProgramForm)
                                 {
                                     <option value="@o">@o</option>
                                 }
@@ -212,7 +216,7 @@
                     <div class="col-6">
                         <label class="form-label small text-body-secondary mb-1" for="userAddPapQ1">1st quarter</label>
                         <select id="userAddPapQ1" class="form-select" aria-label="1st quarter status">
-                            @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                            @foreach (var o in DashboardPapSelectOptions.QuarterStatusesProgramForm)
                             {
                                 <option value="@o">@o</option>
                             }
@@ -221,7 +225,7 @@
                     <div class="col-6">
                         <label class="form-label small text-body-secondary mb-1" for="userAddPapQ2">2nd quarter</label>
                         <select id="userAddPapQ2" class="form-select" aria-label="2nd quarter status">
-                            @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                            @foreach (var o in DashboardPapSelectOptions.QuarterStatusesProgramForm)
                             {
                                 <option value="@o">@o</option>
                             }
@@ -230,7 +234,7 @@
                     <div class="col-6">
                         <label class="form-label small text-body-secondary mb-1" for="userAddPapQ3">3rd quarter</label>
                         <select id="userAddPapQ3" class="form-select" aria-label="3rd quarter status">
-                            @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                            @foreach (var o in DashboardPapSelectOptions.QuarterStatusesProgramForm)
                             {
                                 <option value="@o">@o</option>
                             }
@@ -239,7 +243,7 @@
                     <div class="col-6">
                         <label class="form-label small text-body-secondary mb-1" for="userAddPapQ4">4th quarter</label>
                         <select id="userAddPapQ4" class="form-select" aria-label="4th quarter status">
-                            @foreach (var o in DashboardPapSelectOptions.QuarterStatuses)
+                            @foreach (var o in DashboardPapSelectOptions.QuarterStatusesProgramForm)
                             {
                                 <option value="@o">@o</option>
                             }

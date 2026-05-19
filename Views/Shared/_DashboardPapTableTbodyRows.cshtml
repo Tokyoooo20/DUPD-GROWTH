@@ -5,11 +5,15 @@
     var showRowDelete = ViewData["DashboardDetailShowRowDelete"] as bool? ?? false;
     var showRowEdit = ViewData["DashboardDetailShowRowEdit"] as bool? ?? true;
     var showRowActionsColumn = showRowEdit || showRowDelete;
+    var showCompletionPhotoUpload = ViewData["DashboardDetailShowCompletionPhotoUpload"] as bool? ?? false;
+    var completionPhotoUploadUrl = ViewData["ProjectCompletionPhotoUploadUrl"] as string;
+    var completionPhotoViewOnly = ViewData["DashboardDetailCompletionPhotoViewOnly"] as bool? ?? false;
+    var showCompletionPhotoColumn = showCompletionPhotoUpload && (!string.IsNullOrWhiteSpace(completionPhotoUploadUrl) || completionPhotoViewOnly);
 }
 @if (Model.Rows.Count == 0)
 {
     <tr>
-        <td colspan="@(14 + (showPriorityNoColumn ? 1 : 0) + (showRowActionsColumn ? 1 : 0))" class="text-center text-body-secondary py-4">
+        <td colspan="@(14 + (showPriorityNoColumn ? 1 : 0) + (showRowActionsColumn ? 1 : 0) + (showCompletionPhotoColumn ? 1 : 0))" class="text-center text-body-secondary py-4">
             @(Model.GrowthFilter is not null
                 ? "No PAPs match this GROWTH filter."
                 : !string.IsNullOrWhiteSpace(Model.SearchQuery)
@@ -55,6 +59,15 @@ else
             <td class="dashboard-pap-select-cell">
                 @await Html.PartialAsync("_DashboardPapSelectCell", new PapSelectCellModel(DashboardPapSelectOptions.QuarterStatuses, row.StatusQ4, "dashboard-pap-select--quarter", "4th quarter status"))
             </td>
+            @if (showCompletionPhotoColumn)
+            {
+                <td class="dashboard-pap-col-completion-photo align-top small">
+                    @if (DashboardPapRowCompletion.IsEligibleForCompletionPhoto(row))
+                    {
+                        @await Html.PartialAsync("_DashboardPapCompletionPhotoUpload", new PapCompletionPhotoUploadCellModel(row.Id, row.CompletionPhotoPath))
+                    }
+                </td>
+            }
             <td class="dashboard-pap-td-ellipsis dashboard-pap-td-ellipsis--remarks"><input type="text" class="form-control form-control-sm dashboard-pap-text-input dashboard-pap-text-input--ellipsis" value="@row.Remarks" title="@row.Remarks" readonly autocomplete="off" aria-label="Remarks" /></td>
             @if (showRowActionsColumn)
             {

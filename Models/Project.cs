@@ -34,6 +34,9 @@ public class Project
 
     public string? StatusQ4 { get; set; }
 
+    /// <summary>Web-relative path under wwwroot; maps to DB column <c>completion_photo</c>.</summary>
+    public string? CompletionPhotoPath { get; set; }
+
     public string? ProjectStatus { get; set; }
 
     public DateTime? DroppedAt { get; set; }

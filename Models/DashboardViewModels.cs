@@ -52,6 +52,14 @@ public static class DashboardPapSelectOptions
         "N/A"
     ];
 
+    /// <summary>Quarter options for user Program/Project forms (Create/Edit); N/A is not offered in Q1–Q4 dropdowns.</summary>
+    public static readonly string[] QuarterStatusesProgramForm =
+    [
+        "To be Implemented",
+        "On going",
+        "Completed",
+    ];
+
     public static readonly string[] Growth =
     [
         "I. Global Recognition",
@@ -85,6 +93,26 @@ public record PapSelectCellModel(
     string CssClass,
     string AriaLabel);
 
+/// <summary>Single completion photo on the client Project table (shown when any quarter is Completed).</summary>
+public record PapCompletionPhotoUploadCellModel(int ProjectId, string? PhotoPath);
+
+public static class DashboardPapRowCompletion
+{
+    /// <summary>
+    /// True when any quarter is <c>Completed</c>. Matches the edit form: after the first Completed, later quarters may be empty/disabled.
+    /// </summary>
+    public static bool IsEligibleForCompletionPhoto(DashboardPapRow row)
+    {
+        static bool IsCompleted(string s) =>
+            string.Equals(s?.Trim(), "Completed", StringComparison.OrdinalIgnoreCase);
+
+        return IsCompleted(row.StatusQ1)
+            || IsCompleted(row.StatusQ2)
+            || IsCompleted(row.StatusQ3)
+            || IsCompleted(row.StatusQ4);
+    }
+}
+
 public class DashboardPapRow
 {
     public int Id { get; init; }
@@ -102,6 +130,7 @@ public class DashboardPapRow
     public string StatusQ2 { get; init; } = "";
     public string StatusQ3 { get; init; } = "";
     public string StatusQ4 { get; init; } = "";
+    public string? CompletionPhotoPath { get; init; }
     public string Remarks { get; init; } = "";
     /// <summary>Overall status used for dashboard segment filters.</summary>
     public string Status { get; init; } = "";

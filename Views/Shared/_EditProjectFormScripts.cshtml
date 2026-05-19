@@ -1,0 +1,261 @@
+@model DupdGrowth.Web.Models.Project
+@using System.Text.Json
+@{
+    string JsonUrl(string? s) => JsonSerializer.Serialize(string.IsNullOrWhiteSpace(s) ? "/Pages/User/Project" : s);
+    var editCancelReturnUrl = JsonUrl(ViewData["EditProjectCancelReturnUrl"] as string);
+    var editPostSuccessReturnUrl = JsonUrl(ViewData["EditProjectPostSuccessReturnUrl"] as string);
+    var editAfterMoveToDraftUrl = JsonUrl(ViewData["EditProjectAfterMoveToDraftUrl"] as string);
+    var editAfterMoveToDropUrl = JsonUrl(ViewData["EditProjectAfterMoveToDropUrl"] as string);
+
+    var editQuarterFallbackJson = JsonSerializer.Serialize(new[]
+    {
+        Model.StatusQ1 ?? "",
+        Model.StatusQ2 ?? "",
+        Model.StatusQ3 ?? "",
+        Model.StatusQ4 ?? ""
+    });
+}
+<script>
+    var editCancelReturnUrl = @Html.Raw(editCancelReturnUrl);
+    var editPostSuccessReturnUrl = @Html.Raw(editPostSuccessReturnUrl);
+    var editAfterMoveToDraftUrl = @Html.Raw(editAfterMoveToDraftUrl);
+    var editAfterMoveToDropUrl = @Html.Raw(editAfterMoveToDropUrl);
+
+    var editQuarterFallback = @Html.Raw(editQuarterFallbackJson);
+
+    var editSaveModalEl = document.getElementById('editSaveConfirmModal');
+    var editSaveEndorsedModalEl = document.getElementById('editSaveEndorsedConfirmModal');
+
+    function notifyEdit(message, type) {
+        if (typeof window.showAppNotification === 'function') {
+            window.showAppNotification(message, type === 'success' ? 'success' : 'error');
+        }
+    }
+
+    function editQuarterFormValue(n) {
+        var el = document.getElementById('userAddPapQ' + n);
+        if (el) return el.value;
+        var i = n - 1;
+        var v = editQuarterFallback[i];
+        return v != null ? v : '';
+    }
+
+    function buildEditFormData(token, saveAsEndorsed) {
+        var fd = new FormData();
+        var priorityRaw = document.getElementById('userAddPapPriorityNo').value.trim();
+        var budgetRaw = document.getElementById('userAddPapBudget').value.trim();
+        fd.append('PriorityNo', priorityRaw === '' ? '0' : priorityRaw);
+        fd.append('PapName', document.getElementById('userAddPapName').value.trim());
+        fd.append('ResponsiblePerson', document.getElementById('userAddPapResponsible').value.trim());
+        fd.append('Budget', budgetRaw === '' ? '0' : budgetRaw);
+        fd.append('TimeFrameStart', document.getElementById('userAddPapTimeStart').value);
+        fd.append('TimeFrameEnd', document.getElementById('userAddPapTimeEnd').value);
+        fd.append('SupportOffice', document.getElementById('userAddPapOrg').value.trim());
+        fd.append('AlignmentGrowth', document.getElementById('userAddPapGrowth').value || '');
+        fd.append('AlignmentAchieve', document.getElementById('userAddPapAchieve').value || '');
+        fd.append('RemarksType', document.getElementById('userAddPapRemarksContinuingType').value.trim());
+        fd.append('RemarksTypeOther', document.getElementById('userAddPapRemarksContinuingOther').value.trim() || '');
+        fd.append('Remarks', document.getElementById('userAddPapRemarks').value.trim() || '');
+        fd.append('StatusQ1', editQuarterFormValue(1));
+        fd.append('StatusQ2', editQuarterFormValue(2));
+        fd.append('StatusQ3', editQuarterFormValue(3));
+        fd.append('StatusQ4', editQuarterFormValue(4));
+        fd.append('__RequestVerificationToken', token);
+        if (saveAsEndorsed) fd.append('saveAsEndorsed', 'true');
+        return fd;
+    }
+
+    function submitEditPost(modalElToHide, saveAsEndorsed) {
+        var id = document.getElementById('editProjectId').value;
+        var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        var fd = buildEditFormData(token, saveAsEndorsed);
+        fetch('/Pages/User/Edit/' + id, {
+            method: 'POST',
+            headers: { 'RequestVerificationToken': token },
+            body: fd
+        })
+        .then(function (res) {
+            return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        })
+        .then(function (result) {
+            if (result.ok && result.data.success) {
+                if (modalElToHide) {
+                    var m = bootstrap.Modal.getInstance(modalElToHide);
+                    if (m) m.hide();
+                }
+                notifyEdit(result.data.message || 'Project updated successfully!', 'success');
+                setTimeout(function () {
+                    window.location.href = editPostSuccessReturnUrl;
+                }, 1500);
+            } else {
+                var errList = result.data && result.data.errors;
+                var msg = Array.isArray(errList) && errList.length ? errList.join(' ') : (result.data && result.data.message);
+                notifyEdit(msg || 'Update failed. Please try again.', 'error');
+            }
+        })
+        .catch(function (error) {
+            console.error('Error:', error);
+            notifyEdit('An unexpected error occurred.', 'error');
+        });
+    }
+
+    (function () {
+        document.getElementById('userAddPapPriorityNo').value = '@Model.PriorityNo';
+        document.getElementById('userAddPapName').value = '@Html.Raw(Model.Paps)';
+        document.getElementById('userAddPapResponsible').value = '@Html.Raw(Model.ResponsiblePerson)';
+        document.getElementById('userAddPapBudget').value = '@Model.Budget';
+        document.getElementById('userAddPapTimeStart').value = '@Model.TimeStart';
+        document.getElementById('userAddPapTimeEnd').value = '@Model.TimeEnd';
+        document.getElementById('userAddPapGrowth').value = '@Model.Growth';
+
+        var achieveVal = '@Html.Raw(Model.Achieve)';
+        var achieveSelect = document.getElementById('userAddPapAchieve');
+        if (achieveSelect) {
+            achieveSelect.value = achieveVal;
+        }
+
+        var remarksType = '@Html.Raw(Model.RemarksType)';
+        var remarksSelect = document.getElementById('userAddPapRemarksContinuingType');
+        var remarksOtherInput = document.getElementById('userAddPapRemarksContinuingOther');
+
+        var found = false;
+        for (var i = 0; i < remarksSelect.options.length; i++) {
+            if (remarksSelect.options[i].value === remarksType) {
+                remarksSelect.selectedIndex = i;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found && remarksType) {
+            remarksSelect.value = 'Others';
+            remarksOtherInput.value = remarksType;
+            var otherWrap = document.getElementById('userAddPapRemarksContinuingOtherWrap');
+            if (otherWrap) {
+                otherWrap.classList.remove('d-none');
+            }
+            remarksOtherInput.disabled = false;
+        }
+
+        document.getElementById('userAddPapRemarks').value = '@Html.Raw(Model.Remarks)';
+
+        for (var qi = 0; qi < 4; qi++) {
+            var qEl = document.getElementById('userAddPapQ' + (qi + 1));
+            if (qEl) qEl.value = editQuarterFallback[qi] || '';
+        }
+
+        if (typeof syncRemarksContinuingNewUi === 'function') {
+            syncRemarksContinuingNewUi();
+        }
+    })();
+
+    var editSaveBtnEl = document.getElementById('editSaveBtn');
+    if (editSaveBtnEl) {
+        editSaveBtnEl.addEventListener('click', function() {
+            if (!editSaveModalEl || typeof bootstrap === 'undefined') return;
+            bootstrap.Modal.getOrCreateInstance(editSaveModalEl).show();
+        });
+    }
+
+    var editSaveEndorsedBtnEl = document.getElementById('editSaveEndorsedBtn');
+    if (editSaveEndorsedBtnEl && editSaveEndorsedModalEl) {
+        editSaveEndorsedBtnEl.addEventListener('click', function() {
+            if (typeof bootstrap === 'undefined') return;
+            bootstrap.Modal.getOrCreateInstance(editSaveEndorsedModalEl).show();
+        });
+    }
+
+    var editDraftBtnEl = document.getElementById('editDraftBtn');
+    if (editDraftBtnEl) {
+        editDraftBtnEl.addEventListener('click', function() {
+            var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editDraftConfirmModal'));
+            modal.show();
+        });
+    }
+
+    var editDropBtnEl = document.getElementById('editDropBtn');
+    if (editDropBtnEl) {
+        editDropBtnEl.addEventListener('click', function() {
+            var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editDropConfirmModal'));
+            modal.show();
+        });
+    }
+
+    document.getElementById('editDropConfirmBtn')?.addEventListener('click', function() {
+        var id = document.getElementById('editProjectId').value;
+        fetch('/Pages/User/Drop/' + id, {
+            method: 'POST',
+            headers: {
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            }
+        })
+        .then(function (res) {
+            return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        })
+        .then(function (result) {
+            if (result.ok && result.data.success) {
+                notifyEdit('Project moved to Dropped successfully!', 'success');
+                setTimeout(function () {
+                    window.location.href = editAfterMoveToDropUrl;
+                }, 1500);
+            } else if (result.data?.alreadyInStatus) {
+                notifyEdit(result.data.message || 'This project is already dropped.', 'error');
+            } else {
+                notifyEdit(result.data?.message || 'Failed to drop project.', 'error');
+            }
+        })
+        .catch(function (error) {
+            console.error('Error:', error);
+            notifyEdit('An unexpected error occurred.', 'error');
+        });
+    });
+
+    document.getElementById('editDraftConfirmBtn')?.addEventListener('click', function() {
+        var id = document.getElementById('editProjectId').value;
+        fetch('/Pages/User/MoveToDraft/' + id, {
+            method: 'POST',
+            headers: {
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            }
+        })
+        .then(function (res) {
+            return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        })
+        .then(function (result) {
+            if (result.ok && result.data.success) {
+                notifyEdit('Project moved to Draft successfully!', 'success');
+                setTimeout(function () {
+                    window.location.href = editAfterMoveToDraftUrl;
+                }, 1500);
+            } else if (result.data?.alreadyInStatus) {
+                notifyEdit(result.data.message || 'This project is already in draft status.', 'error');
+            } else {
+                notifyEdit(result.data?.message || 'Failed to move project to Draft.', 'error');
+            }
+        })
+        .catch(function (error) {
+            console.error('Error:', error);
+            notifyEdit('An unexpected error occurred.', 'error');
+        });
+    });
+
+    document.getElementById('editSaveConfirmBtn')?.addEventListener('click', function() {
+        submitEditPost(editSaveModalEl, false);
+    });
+
+    var editSaveEndorsedConfirmBtn = document.getElementById('editSaveEndorsedConfirmBtn');
+    if (editSaveEndorsedConfirmBtn) {
+        editSaveEndorsedConfirmBtn.addEventListener('click', function() {
+            submitEditPost(editSaveEndorsedModalEl, true);
+        });
+    }
+
+    document.getElementById('editCancelBtn').addEventListener('click', function() {
+        var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editCancelConfirmModal'));
+        modal.show();
+    });
+
+    document.getElementById('editCancelConfirmBtn').addEventListener('click', function() {
+        window.location.href = editCancelReturnUrl;
+    });
+</script>

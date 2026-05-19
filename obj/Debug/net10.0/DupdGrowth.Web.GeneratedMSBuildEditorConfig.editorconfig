@@ -102,6 +102,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9EYXNoYm9hcmRQYXBBamF4VGFibGVVcGRhdGUuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/DUPD - GROWTH/Views/Shared/_DashboardPapCompletionPhotoUpload.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9EYXNoYm9hcmRQYXBDb21wbGV0aW9uUGhvdG9VcGxvYWQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/DUPD - GROWTH/Views/Shared/_DashboardPapDetailPageScripts.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9EYXNoYm9hcmRQYXBEZXRhaWxQYWdlU2NyaXB0cy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -116,6 +120,14 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/DUPD - GROWTH/Views/Shared/_DashboardPapTableTbodyRows.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9EYXNoYm9hcmRQYXBUYWJsZVRib2R5Um93cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/DUPD - GROWTH/Views/Shared/_EditProjectFormScripts.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9FZGl0UHJvamVjdEZvcm1TY3JpcHRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/DUPD - GROWTH/Views/Shared/_EditProjectPage.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9FZGl0UHJvamVjdFBhZ2UuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/DUPD - GROWTH/Views/Shared/_Layout.cshtml]

@@ -131,6 +131,12 @@ public class ClientController : Controller
             : DashboardSegments.Total;
 
         var vm = await GetProjectFilteredViewModel(sidebar, title, actionName, page, year, growth, seg, search: q);
+        if (sidebar == ClientPapSearchLists.Project)
+        {
+            ViewData["DashboardDetailCompletionPhotoViewOnly"] = true;
+            ViewData["ProjectCompletionPhotoUploadUrl"] = null;
+            ViewData["DashboardDetailCompletionPhotoPreviewModalId"] = "userProjectCompletionPhotoModal";
+        }
         Response.Headers.CacheControl = "no-store";
         return PartialView("~/Views/Shared/_DashboardPapAjaxTableUpdate.cshtml", vm);
     }
@@ -157,6 +163,9 @@ public class ClientController : Controller
         ViewData["DetailBackIncludeYear"] = false;
         ViewData["NavbarYearDetailAction"] = "UserProject";
         ViewData["DashboardSidebarStartCollapsed"] = true;
+        ViewData["DashboardDetailCompletionPhotoViewOnly"] = true;
+        ViewData["ProjectCompletionPhotoUploadUrl"] = null;
+        ViewData["DashboardDetailCompletionPhotoPreviewModalId"] = "userProjectCompletionPhotoModal";
 
         return View("~/Views/Client/UserProject.cshtml", vm);
     }
@@ -172,24 +181,87 @@ public class ClientController : Controller
     }
 
     [HttpGet("User/Edit/{id}")]
-    public async Task<IActionResult> EditProject(int id)
+    public async Task<IActionResult> EditProject(int id, string? from = null)
     {
-        var project = await _db.Projects.FindAsync(id);
-        if (project == null) return NotFound();
+        var editorUserId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var eid) ? eid : (int?)null;
+        if (editorUserId is null)
+            return Unauthorized();
 
-        ViewData["SidebarActive"] = "project";
-        ViewData["Title"] = "Edit Project";
-        ViewData["DashboardShellMode"] = "user";
-        ViewData["NavbarShowYear"] = false;
+        var editor = await _db.Users.FindAsync(editorUserId.Value);
+        if (editor == null)
+            return Unauthorized();
+
+        var project = await ApplyClientProjectOfficeScope(_db.Projects.AsQueryable(), editor)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        if (project == null)
+            return NotFound();
+
+        var fromNorm = from?.Trim().ToLowerInvariant();
+        var isDraft = string.Equals(project.ProjectStatus, "draft", StringComparison.OrdinalIgnoreCase);
+        var isDropped = string.Equals(project.ProjectStatus, "dropped", StringComparison.OrdinalIgnoreCase);
+        if (fromNorm == "draft" && !isDraft)
+            return RedirectToAction(nameof(EditProject), new { id });
+        if (fromNorm == "dropped" && !isDropped)
+            return RedirectToAction(nameof(EditProject), new { id });
+
+        var minimalListActions = (fromNorm == "draft" && isDraft) || (fromNorm == "dropped" && isDropped);
+        ViewData["EditProjectMinimalActions"] = minimalListActions;
+
+        ApplyEditProjectPageViewData(project);
 
         return View("~/Views/Client/EditProject.cshtml", project);
     }
 
+    /// <summary>Sidebar, titles, breadcrumbs, and client-side return URLs based on project status (draft / dropped / active).</summary>
+    private void ApplyEditProjectPageViewData(Project project)
+    {
+        var isDraft = string.Equals(project.ProjectStatus, "draft", StringComparison.OrdinalIgnoreCase);
+        var isDropped = string.Equals(project.ProjectStatus, "dropped", StringComparison.OrdinalIgnoreCase);
+
+        ViewData["DashboardShellMode"] = "user";
+        ViewData["NavbarShowYear"] = false;
+        ViewData["EditProjectPostSuccessReturnUrl"] = Url.Action(nameof(UserProject), "Client")!;
+        ViewData["EditProjectAfterMoveToDraftUrl"] = Url.Action(nameof(Draft), "Client")!;
+        ViewData["EditProjectAfterMoveToDropUrl"] = Url.Action(nameof(UserDropped), "Client")!;
+
+        if (isDraft)
+        {
+            ViewData["SidebarActive"] = "draft";
+            ViewData["Title"] = "Edit Draft Project";
+            ViewData["EditProjectPageHeading"] = "Edit Draft Project";
+            ViewData["EditProjectPageSubtitle"] = "";
+            ViewData["EditProjectCancelReturnUrl"] = Url.Action(nameof(Draft), "Client")!;
+            ViewData["EditProjectBackAriaLabel"] = "Back to Draft";
+        }
+        else if (isDropped)
+        {
+            ViewData["SidebarActive"] = "dropped";
+            ViewData["Title"] = "Edit Dropped Project";
+            ViewData["EditProjectPageHeading"] = "Edit Dropped Project";
+            ViewData["EditProjectPageSubtitle"] = "";
+            ViewData["EditProjectCancelReturnUrl"] = Url.Action(nameof(UserDropped), "Client")!;
+            ViewData["EditProjectBackAriaLabel"] = "Back to Dropped";
+        }
+        else
+        {
+            ViewData["SidebarActive"] = "project";
+            ViewData["Title"] = "Edit Project";
+            ViewData["EditProjectPageHeading"] = "Edit Project";
+            ViewData["EditProjectPageSubtitle"] = "Update the details for your program or project.";
+            ViewData["EditProjectCancelReturnUrl"] = Url.Action(nameof(UserProject), "Client")!;
+            ViewData["EditProjectBackAriaLabel"] = "Back to projects";
+        }
+    }
+
     [HttpPost("User/Edit/{id}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditProject(int id, [FromBody] CreatePapRequest request)
+    public async Task<IActionResult> EditProject(
+        int id,
+        [FromForm] CreatePapRequest request,
+        [FromForm] bool saveAsEndorsed = false,
+        CancellationToken cancellationToken = default)
     {
-        var project = await _db.Projects.FindAsync(id);
+        var project = await _db.Projects.FindAsync([id], cancellationToken);
         if (project == null) return NotFound();
 
         var editorUserId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var eid) ? eid : (int?)null;
@@ -203,6 +275,21 @@ public class ClientController : Controller
         if (editor == null)
             return Unauthorized(new { success = false, errors = new[] { "User not found in database." } });
 
+        var inScope = await ApplyClientProjectOfficeScope(_db.Projects.AsQueryable(), editor)
+            .AnyAsync(p => p.Id == id, cancellationToken);
+        if (!inScope)
+            return NotFound(new { success = false, message = "Project not found." });
+
+        var wasDraftOrDropped = IsProjectStatusDraftOrDropped(project.ProjectStatus);
+        if (saveAsEndorsed && !wasDraftOrDropped)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                errors = new[] { "Save Endorsed is only available for projects in Draft or Dropped status." }
+            });
+        }
+
         if (!ModelState.IsValid)
         {
             return BadRequest(new
@@ -212,6 +299,19 @@ public class ClientController : Controller
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage)
                     .ToList()
+            });
+        }
+
+        var scopedProjects = ApplyClientProjectOfficeScope(_db.Projects.AsQueryable(), editor);
+        var priorityTaken = await scopedProjects
+            .AnyAsync(p => p.Id != id && p.PriorityNo == request.PriorityNo, cancellationToken);
+        if (priorityTaken)
+        {
+            return Conflict(new
+            {
+                success = false,
+                duplicatePriority = true,
+                errors = new[] { "This priority number is already assigned to another project in your office. Please choose a different priority number." }
             });
         }
 
@@ -232,10 +332,20 @@ public class ClientController : Controller
         project.StatusQ4 = request.StatusQ4;
         project.UpdatedAt = DateTime.Now;
 
-        _db.Projects.Update(project);
-        await _db.SaveChangesAsync();
+        if (saveAsEndorsed && wasDraftOrDropped)
+        {
+            project.ProjectStatus = null;
+            project.DraftAt = null;
+            project.DroppedAt = null;
+        }
 
-        return Ok(new { success = true, message = "Project updated successfully." });
+        _db.Projects.Update(project);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var message = saveAsEndorsed && wasDraftOrDropped
+            ? "Project saved as endorsed and restored to your project list."
+            : "Project updated successfully.";
+        return Ok(new { saveAsEndorsed = saveAsEndorsed && wasDraftOrDropped, success = true, message });
     }
 
     [HttpPost("User/Create")]
@@ -420,6 +530,12 @@ public class ClientController : Controller
         {
             // User Project table: omit draft and dropped (those have dedicated pages).
             query = query.Where(p => p.ProjectStatus != "dropped" && p.ProjectStatus != "draft");
+            // Omit any project with a quarter marked Completed (listed under Completed instead).
+            query = query.Where(p =>
+                (p.StatusQ1 == null || p.StatusQ1 != "Completed") &&
+                (p.StatusQ2 == null || p.StatusQ2 != "Completed") &&
+                (p.StatusQ3 == null || p.StatusQ3 != "Completed") &&
+                (p.StatusQ4 == null || p.StatusQ4 != "Completed"));
         }
         else
         {
@@ -461,6 +577,7 @@ public class ClientController : Controller
             StatusQ2 = p.StatusQ2 ?? "",
             StatusQ3 = p.StatusQ3 ?? "",
             StatusQ4 = p.StatusQ4 ?? "",
+            CompletionPhotoPath = p.CompletionPhotoPath,
             Remarks = p.Remarks ?? "",
             Status = p.ProjectStatus ?? "Ongoing"
         }).ToList();
@@ -514,7 +631,11 @@ public class ClientController : Controller
         ViewData["DashboardDetailShowPriorityNoColumn"] = true;
         ViewData["DashboardDetailHidePapEditModal"] = true;
         ViewData["DashboardDetailShowRowDelete"] = false;
-        ViewData["DashboardDetailShowRowEdit"] = false;
+        var showRowEdit =
+            sidebarActive.Equals(ClientPapSearchLists.Project, StringComparison.OrdinalIgnoreCase)
+            || sidebarActive.Equals(ClientPapSearchLists.Draft, StringComparison.OrdinalIgnoreCase)
+            || sidebarActive.Equals(ClientPapSearchLists.Dropped, StringComparison.OrdinalIgnoreCase);
+        ViewData["DashboardDetailShowRowEdit"] = showRowEdit;
         ViewData["DashboardSidebarStartCollapsed"] = true;
         ViewData["PapSearchListKey"] =
             sidebarActive.Equals(ClientPapSearchLists.Dropped, StringComparison.OrdinalIgnoreCase)
@@ -523,6 +644,17 @@ public class ClientController : Controller
         ViewData["UserReportToolbarShowAdd"] =
             sidebarActive.Equals(ClientPapSearchLists.Project, StringComparison.OrdinalIgnoreCase);
         ViewData["UserReportToolbarShowSearch"] = true;
+        var isProjectList = sidebarActive.Equals(ClientPapSearchLists.Project, StringComparison.OrdinalIgnoreCase);
+        var isCompletedList = sidebarActive.Equals(ClientPapSearchLists.Completed, StringComparison.OrdinalIgnoreCase);
+        ViewData["DashboardDetailShowCompletionPhotoUpload"] = isProjectList || isCompletedList;
+        ViewData["ProjectCompletionPhotoUploadUrl"] = isProjectList
+            ? Url.Action(nameof(UploadProjectCompletionPhoto), "Client")
+            : null;
+        if (isCompletedList)
+        {
+            ViewData["DashboardDetailCompletionPhotoViewOnly"] = true;
+            ViewData["DashboardDetailCompletionPhotoPreviewModalId"] = "completedCompletionPhotoModal";
+        }
     }
 
     /// <summary>
@@ -572,7 +704,7 @@ public class ClientController : Controller
 
     /// <summary>Multipart upload for profile image; stores under <c>wwwroot/uploads/profiles/</c> and updates <see cref="User.ProfilePhotoPath"/>.</summary>
     [HttpPost("User/UploadProfilePhoto")]
-    [RequestSizeLimit(5_242_880)]
+    [RequestSizeLimit(20 * 1024 * 1024)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UploadProfilePhoto(IFormFile? photo, CancellationToken cancellationToken)
     {
@@ -582,8 +714,8 @@ public class ClientController : Controller
         if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return BadRequest(new { ok = false, error = "Profile photo is only available for office accounts." });
 
-        if (photo.Length > 5_242_880)
-            return BadRequest(new { ok = false, error = "File is too large (max 5 MB)." });
+        if (photo.Length > 20 * 1024 * 1024)
+            return BadRequest(new { ok = false, error = "File is too large (max 20 MB)." });
 
         var type = (photo.ContentType ?? "").ToLowerInvariant();
         string ext;
@@ -628,6 +760,138 @@ public class ClientController : Controller
         await _db.SaveChangesAsync(cancellationToken);
 
         return Json(new { ok = true, url = relative });
+    }
+
+    /// <summary>Multipart upload for project completion evidence; path stored in <c>completion_photo</c>; files under <c>wwwroot/uploads/project-completion/</c>.</summary>
+    [HttpPost("User/UploadProjectCompletionPhoto")]
+    [RequestSizeLimit(20 * 1024 * 1024)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadProjectCompletionPhoto(
+        [FromForm] int projectId,
+        IFormFile? photo,
+        CancellationToken cancellationToken)
+    {
+        if (photo is null || photo.Length == 0)
+            return BadRequest(new { ok = false, error = "No file was uploaded." });
+
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            return Unauthorized(new { ok = false, error = "Not signed in." });
+
+        var currentUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        if (currentUser is null)
+            return Unauthorized(new { ok = false, error = "User not found." });
+
+        var inScope = await ApplyClientProjectOfficeScope(_db.Projects.AsQueryable(), currentUser)
+            .AnyAsync(p => p.Id == projectId, cancellationToken);
+        if (!inScope)
+            return NotFound(new { ok = false, error = "Project not found." });
+
+        var project = await _db.Projects.FindAsync([projectId], cancellationToken);
+        if (project is null)
+            return NotFound(new { ok = false, error = "Project not found." });
+
+        if (string.Equals(project.ProjectStatus, "dropped", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(project.ProjectStatus, "draft", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { ok = false, error = "Photos cannot be uploaded for draft or dropped projects." });
+
+        var photoError = await TryPersistCompletionPhotoAsync(project, photo, cancellationToken);
+        if (photoError is not null)
+            return BadRequest(new { ok = false, error = photoError });
+
+        project.UpdatedAt = DateTime.Now;
+        _db.Entry(project).Property(x => x.CompletionPhotoPath).IsModified = true;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Json(new { ok = true, url = project.CompletionPhotoPath });
+    }
+
+    /// <summary>Writes image to disk and sets <see cref="Project.CompletionPhotoPath"/>. Returns an error message or null on success.</summary>
+    private async Task<string?> TryPersistCompletionPhotoAsync(
+        Project project,
+        IFormFile photo,
+        CancellationToken cancellationToken)
+    {
+        if (photo.Length > 20 * 1024 * 1024)
+            return "File is too large (max 20 MB).";
+
+        var type = (photo.ContentType ?? "").ToLowerInvariant();
+        string ext;
+        switch (type)
+        {
+            case "image/jpeg":
+                ext = ".jpg";
+                break;
+            case "image/png":
+                ext = ".png";
+                break;
+            case "image/webp":
+                ext = ".webp";
+                break;
+            case "image/gif":
+                ext = ".gif";
+                break;
+            default:
+                return "Only JPG, PNG, WebP, or GIF images are allowed.";
+        }
+
+        var row = new DashboardPapRow
+        {
+            Id = project.Id,
+            StatusQ1 = project.StatusQ1 ?? "",
+            StatusQ2 = project.StatusQ2 ?? "",
+            StatusQ3 = project.StatusQ3 ?? "",
+            StatusQ4 = project.StatusQ4 ?? "",
+        };
+        if (!DashboardPapRowCompletion.IsEligibleForCompletionPhoto(row))
+            return "Mark at least one quarter as Completed before uploading a completion photo.";
+
+        var webRoot = _env.WebRootPath ?? throw new InvalidOperationException("WebRootPath is not set.");
+        var dir = Path.Combine(webRoot, "uploads", "project-completion", project.Id.ToString());
+        Directory.CreateDirectory(dir);
+
+        TryDeleteWebRelativeFile(webRoot, project.CompletionPhotoPath);
+
+        var fileName = $"{Guid.NewGuid():N}{ext}";
+        var physical = Path.Combine(dir, fileName);
+        var relative = $"/uploads/project-completion/{project.Id}/{fileName}";
+
+        await using (var stream = System.IO.File.Create(physical))
+        {
+            await photo.CopyToAsync(stream, cancellationToken);
+        }
+
+        project.CompletionPhotoPath = relative;
+        return null;
+    }
+
+    private static bool IsProjectStatusDraftOrDropped(string? projectStatus) =>
+        string.Equals(projectStatus, "dropped", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(projectStatus, "draft", StringComparison.OrdinalIgnoreCase);
+
+    private static void TryDeleteWebRelativeFile(string webRoot, string? relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(relativePath))
+            return;
+
+        var trimmed = relativePath.Trim();
+        if (!trimmed.StartsWith("/uploads/", StringComparison.Ordinal))
+            return;
+
+        var rel = trimmed.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+        var full = Path.GetFullPath(Path.Combine(webRoot, rel));
+        var root = Path.GetFullPath(webRoot);
+        if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        try
+        {
+            if (System.IO.File.Exists(full))
+                System.IO.File.Delete(full);
+        }
+        catch
+        {
+            // ignore locked / missing files
+        }
     }
 
     private static void RemoveExistingUserProfileFiles(string dir, int userId)

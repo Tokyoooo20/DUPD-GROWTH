@@ -1,3 +1,4 @@
+@model DashboardKpiStripViewModel
 @{
     Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
     ViewData["Title"] = "VPAA";
@@ -19,12 +20,17 @@
                 <header class="dashboard-page-header mb-2 mb-lg-3">
                     <h1 class="dashboard-page-title">VPAA</h1>
                 </header>
+
                 @await Html.PartialAsync("Chart")
             </div>
         </main>
     </div>
 </div>
 @section Scripts {
+    @if (!string.IsNullOrEmpty(Model.PapStatusGroupedChartJson))
+    {
+        <script type="application/json" id="pap-status-grouped-chart-data">@Html.Raw(Model.PapStatusGroupedChartJson)</script>
+    }
     <script src="~/lib/chart.js/dist/chart.umd.min.js" asp-append-version="true"></script>
     <script src="~/lib/chartjs-plugin-datalabels/chartjs-plugin-datalabels.min.js" asp-append-version="true"></script>
     <script src="~/js/dashboard-charts.js" asp-append-version="true"></script>

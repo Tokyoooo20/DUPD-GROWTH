@@ -313,6 +313,14 @@ a.dashboard-detail-back:focus-visible {
     vertical-align: middle;
 }
 
+.dashboard-pap-table th.dashboard-pap-thead--completion-photo,
+.dashboard-pap-table .dashboard-pap-col-completion-photo {
+    min-width: 8.5rem;
+    max-width: 13rem;
+    vertical-align: top;
+    text-align: left;
+}
+
 .dashboard-pap-table .dashboard-pap-btn-edit {
     padding: 0.25rem 0.4rem;
     line-height: 1;

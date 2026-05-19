@@ -31,6 +31,12 @@ builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 
 var app = builder.Build();
 
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await ProjectCompletionPhotoSchema.EnsureAsync(db);
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

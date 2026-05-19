@@ -19,16 +19,6 @@
             min-width: min(100%, var(--office-toolbar-select-min));
         }
 
-        .office-table-toolbar__actions {
-            flex-shrink: 0;
-        }
-
-        .office-table-toolbar__actions .btn {
-            min-height: calc(1.5em + 0.75rem + 2px);
-            padding-top: 0.375rem;
-            padding-bottom: 0.375rem;
-        }
-
         .office-table-toolbar__fields {
             min-width: 0;
         }
@@ -50,37 +40,24 @@
                 <div class="card dashboard-card border-0 shadow-sm">
                     <div class="dashboard-card__body p-0">
                         <div class="office-table-toolbar border-bottom py-3 px-3 px-md-4 bg-white">
-                            <div class="d-flex flex-column flex-xl-row gap-3 align-items-stretch align-xl-end">
-                                <div class="office-table-toolbar__fields flex-grow-1 d-flex flex-column flex-lg-row gap-3 gap-lg-4 min-w-0">
-                                    <div class="flex-grow-1 min-w-0">
-                                        <label class="form-label small text-body-secondary mb-1" for="officeTableSearch">Search offices</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-white border-end-0" id="officeSearchAddon"><i class="bi bi-search" aria-hidden="true"></i></span>
-                                            <input type="search"
-                                                   class="form-control border-start-0"
-                                                   id="officeTableSearch"
-                                                   placeholder="Search by name"
-                                                   autocomplete="off"
-                                                   aria-describedby="officeSearchAddon" />
-                                        </div>
-                                    </div>
-                                    <div class="flex-shrink-0" style="width: 100%; max-width: 22rem;">
-                                        <label class="form-label small text-body-secondary mb-1" for="officeTopLevelFilter">Top-level office</label>
-                                        <select class="form-select" id="officeTopLevelFilter" aria-label="Filter by top-level office">
-                                            <option value="">All top-level offices</option>
-                                        </select>
+                            <div class="office-table-toolbar__fields d-flex flex-column flex-lg-row gap-3 gap-lg-4 min-w-0">
+                                <div class="flex-grow-1 min-w-0">
+                                    <label class="form-label small text-body-secondary mb-1" for="officeTableSearch">Search offices</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0" id="officeSearchAddon"><i class="bi bi-search" aria-hidden="true"></i></span>
+                                        <input type="search"
+                                               class="form-control border-start-0"
+                                               id="officeTableSearch"
+                                               placeholder="Search by name"
+                                               autocomplete="off"
+                                               aria-describedby="officeSearchAddon" />
                                     </div>
                                 </div>
-                                <div class="office-table-toolbar__actions d-flex flex-column ms-xl-auto">
-                                    <span class="form-label small mb-1 invisible user-select-none" aria-hidden="true">Actions</span>
-                                    <div class="d-flex flex-wrap gap-2 justify-content-end">
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-secondary"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#addYearModal">
-                                            Add Year
-                                        </button>
-                                    </div>
+                                <div class="flex-shrink-0" style="width: 100%; max-width: 22rem;">
+                                    <label class="form-label small text-body-secondary mb-1" for="officeTopLevelFilter">Top-level office</label>
+                                    <select class="form-select" id="officeTopLevelFilter" aria-label="Filter by top-level office">
+                                        <option value="">All top-level offices</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -102,14 +79,6 @@
             </div>
         </main>
         @{
-            var addYearModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
-            {
-                ["ModalId"] = "addYearModal",
-                ["ModalTitle"] = "Add year",
-                ["ModalBody"] = "<div class=\"mb-0\"><label for=\"addYearInput\" class=\"form-label\">Year</label><input type=\"number\" class=\"form-control\" id=\"addYearInput\" name=\"year\" min=\"2000\" max=\"2100\" placeholder=\"e.g. 2026\" /></div>",
-                ["ModalPrimaryText"] = "Save",
-                ["ModalSecondaryText"] = "Cancel",
-            };
             var addOfficeModalBody =
                 "<div class=\"mb-0\">" +
                 "<label for=\"addOfficeNameInput\" class=\"form-label\">Office name</label>" +
@@ -128,7 +97,6 @@
                 ["ModalPrimaryDismiss"] = false,
             };
         }
-        @await Html.PartialAsync("Modal", null, addYearModal)
         @await Html.PartialAsync("Modal", null, addOfficeModal)
     </div>
 </div>

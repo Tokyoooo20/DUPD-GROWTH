@@ -1,0 +1,135 @@
+@model DupdGrowth.Web.Models.Project
+@{
+    var _status = Model.ProjectStatus ?? "";
+    var isDraft = string.Equals(_status, "draft", StringComparison.OrdinalIgnoreCase);
+    var isDropped = string.Equals(_status, "dropped", StringComparison.OrdinalIgnoreCase);
+    var isDraftOrDropped = isDraft || isDropped;
+
+    var pageHeading = ViewData["EditProjectPageHeading"] as string ?? "Edit Project";
+    var pageSubtitle = ViewData["EditProjectPageSubtitle"] as string ?? "Update the details for your program or project.";
+    var showPageSubtitle = !string.IsNullOrWhiteSpace(pageSubtitle);
+    var cancelReturnUrl = ViewData["EditProjectCancelReturnUrl"] as string ?? Url.Action("UserProject", "Client")!;
+    var backAria = ViewData["EditProjectBackAriaLabel"] as string ?? "Back to projects";
+    var minimalListActions = ViewData["EditProjectMinimalActions"] as bool? ?? false;
+}
+<div class="container-fluid dashboard-page dashboard-page--tight px-3 px-sm-4 px-lg-5 py-4">
+    <header class="dashboard-page-header mb-3">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <a href="@cancelReturnUrl" class="btn btn-sm btn-outline-secondary border-0 px-2" aria-label="@backAria">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <h1 class="dashboard-page-title mb-0">@pageHeading</h1>
+        </div>
+        @if (showPageSubtitle)
+        {
+            <p class="text-body-secondary small mb-0 ps-5">@pageSubtitle</p>
+        }
+    </header>
+    <div id="papTableCard" class="pap-table-card-wrap">
+        <form id="editPapForm"
+              class="dashboard-card__body p-3 p-md-4 bg-white"
+              method="post"
+              autocomplete="off">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="editProjectId" value="@Model.Id" />
+            @await Html.PartialAsync("_UserReportAddProgramFormFields")
+            <div class="d-flex flex-wrap gap-2 justify-content-end border-top pt-3 mt-4">
+                <button type="button" class="btn btn-outline-secondary px-4" id="editCancelBtn">Cancel</button>
+                @if (minimalListActions)
+                {
+                    @if (isDraftOrDropped)
+                    {
+                        <button type="button" class="btn btn-primary px-4" id="editSaveEndorsedBtn">Save Endorsed</button>
+                    }
+                }
+                else
+                {
+                    @if (!isDraft)
+                    {
+                        <button type="button" class="btn btn-outline-primary px-4" id="editDraftBtn">Draft</button>
+                    }
+                    @if (!isDropped)
+                    {
+                        <button type="button" class="btn btn-outline-danger px-4" id="editDropBtn">Dropped</button>
+                    }
+                    @if (isDraftOrDropped)
+                    {
+                        <button type="button" class="btn btn-primary px-4" id="editSaveEndorsedBtn">Save Endorsed</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-primary px-4" id="editSaveBtn">Endorsed</button>
+                    }
+                }
+            </div>
+        </form>
+    </div>
+</div>
+@{
+    var editSaveModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "editSaveConfirmModal",
+        ["ModalTitle"] = "Endorse changes?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to endorse the changes to this project?</p>",
+        ["ModalPrimaryText"] = "Endorsed",
+        ["ModalPrimaryButtonId"] = "editSaveConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Close",
+    };
+    var editSaveEndorsedModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "editSaveEndorsedConfirmModal",
+        ["ModalTitle"] = "Save endorsed?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to proceed?</p>",
+        ["ModalPrimaryText"] = "Confirm",
+        ["ModalPrimaryButtonId"] = "editSaveEndorsedConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Cancel",
+    };
+    var editDraftModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "editDraftConfirmModal",
+        ["ModalTitle"] = "Move to Draft?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to move this project to Draft?</p>",
+        ["ModalPrimaryText"] = "Draft",
+        ["ModalPrimaryButtonId"] = "editDraftConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Cancel",
+    };
+    var editDropModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "editDropConfirmModal",
+        ["ModalTitle"] = "Move to Dropped?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to move this project to Dropped?</p>",
+        ["ModalPrimaryText"] = "Dropped",
+        ["ModalPrimaryButtonId"] = "editDropConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Cancel",
+    };
+    var editCancelModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "editCancelConfirmModal",
+        ["ModalTitle"] = "Discard changes?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">All changes you made will be lost.</p>",
+        ["ModalPrimaryText"] = "Discard",
+        ["ModalPrimaryButtonId"] = "editCancelConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Stay",
+    };
+}
+@if (!minimalListActions)
+{
+    @await Html.PartialAsync("Modal", null, editSaveModal)
+}
+@await Html.PartialAsync("Modal", null, editSaveEndorsedModal)
+@if (!minimalListActions)
+{
+    @await Html.PartialAsync("Modal", null, editDraftModal)
+    @await Html.PartialAsync("Modal", null, editDropModal)
+}
+@await Html.PartialAsync("Modal", null, editCancelModal)

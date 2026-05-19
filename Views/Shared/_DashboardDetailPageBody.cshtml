@@ -30,9 +30,13 @@
     var showRowDelete = ViewData["DashboardDetailShowRowDelete"] as bool? ?? false;
     var showRowEdit = ViewData["DashboardDetailShowRowEdit"] as bool? ?? true;
     var showRowActionsColumn = showRowEdit || showRowDelete;
+    var rowActionsColumnHeading = ViewData["DashboardDetailRowActionsColumnHeading"] as string ?? "Actions";
     var sidebarPartialName = string.Equals(dashboardShellMode, "user", StringComparison.OrdinalIgnoreCase)
         ? "_SidebarUser"
         : "_Sidebar";
+    var completionPhotoUploadUrl = ViewData["ProjectCompletionPhotoUploadUrl"] as string;
+    var completionPhotoViewOnly = ViewData["DashboardDetailCompletionPhotoViewOnly"] as bool? ?? false;
+    var showCompletionPhotoColumn = !string.IsNullOrWhiteSpace(completionPhotoUploadUrl) || completionPhotoViewOnly;
 }
 <div class="app-shell d-flex">
     <div class="dashboard-sidebar-shell flex-shrink-0" id="dashboardDetailSidebarShell">
@@ -144,7 +148,7 @@
                     </header>
                 }
 
-                <div id="papTableCard" class="pap-table-card-wrap"@if (showTableToolbar && !string.IsNullOrWhiteSpace(papSearchListKey)) { <text> data-pap-search-list="@papSearchListKey"</text> }>
+                <div id="papTableCard" class="pap-table-card-wrap"@if (showTableToolbar && !string.IsNullOrWhiteSpace(papSearchListKey)) { <text> data-pap-search-list="@papSearchListKey"</text> }@if (!string.IsNullOrWhiteSpace(completionPhotoUploadUrl)) { <text> data-project-completion-photo-upload-url="@completionPhotoUploadUrl"</text> }>
                     <div class="dashboard-card__body p-0">
                         @if (showGrowthFilter)
                         {
@@ -199,10 +203,14 @@
                                         <th scope="colgroup" colspan="2" class="dashboard-pap-thead">Alignment</th>
                                         <th scope="col" rowspan="2" class="dashboard-pap-thead">Remarks (Continuing, New, etc.)</th>
                                         <th scope="colgroup" colspan="4" class="dashboard-pap-thead">Status</th>
+                                        @if (showCompletionPhotoColumn)
+                                        {
+                                            <th scope="col" rowspan="2" class="dashboard-pap-thead dashboard-pap-thead--completion-photo text-nowrap">Completion photo</th>
+                                        }
                                         <th scope="col" rowspan="2" class="dashboard-pap-thead">Remarks</th>
                                         @if (showRowActionsColumn)
                                         {
-                                            <th scope="col" rowspan="2" class="dashboard-pap-thead dashboard-pap-thead--actions">Actions</th>
+                                            <th scope="col" rowspan="2" class="dashboard-pap-thead dashboard-pap-thead--actions">@rowActionsColumnHeading</th>
                                         }
                                     </tr>
                                     <tr>

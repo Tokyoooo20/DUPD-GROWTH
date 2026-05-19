@@ -3,11 +3,62 @@
     Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
     ViewData["SidebarUserName"] = User.Identity?.Name ?? "Sample User";
     ViewData["ChartShowGrowthIndicator"] = false;
+    ViewData["DashboardDetailRowActionsColumnHeading"] = "Action";
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/User/UserDropped.css" asp-append-version="true" />
 }
 @await Html.PartialAsync("_DashboardDetailPageBody", Model)
+@Html.AntiForgeryToken()
+@{
+    var droppedListEditConfirmModal = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData)
+    {
+        ["ModalId"] = "droppedListEditConfirmModal",
+        ["ModalTitle"] = "Edit this project?",
+        ["ModalSize"] = "modal-sm",
+        ["ModalBody"] = "<p class=\"mb-0\">Are you sure you want to proceed?</p>",
+        ["ModalPrimaryText"] = "Confirm",
+        ["ModalPrimaryButtonId"] = "droppedListEditConfirmBtn",
+        ["ModalPrimaryDismiss"] = false,
+        ["ModalSecondaryText"] = "Cancel",
+    };
+}
+@await Html.PartialAsync("Modal", null, droppedListEditConfirmModal)
 @section Scripts {
     @await Html.PartialAsync("_DashboardPapDetailPageScripts")
+    <script>
+        (function () {
+            if (typeof bootstrap === 'undefined') return;
+            var table = document.getElementById('papDetailTable');
+            var editModalEl = document.getElementById('droppedListEditConfirmModal');
+            if (!table || !editModalEl) return;
+
+            var editModal = bootstrap.Modal.getOrCreateInstance(editModalEl);
+            var editConfirmBtn = document.getElementById('droppedListEditConfirmBtn');
+            var pendingEditId = null;
+
+            table.addEventListener('click', function (e) {
+                var editBtn = e.target.closest('[data-pap-edit-trigger]');
+                if (editBtn && table.contains(editBtn)) {
+                    e.preventDefault();
+                    pendingEditId = editBtn.getAttribute('data-pap-id');
+                    if (pendingEditId) editModal.show();
+                }
+            });
+
+            if (editConfirmBtn) {
+                editConfirmBtn.addEventListener('click', function () {
+                    if (pendingEditId) {
+                        window.location.href = '/Pages/User/Edit/' + pendingEditId + '?from=dropped';
+                    }
+                    var inst = bootstrap.Modal.getInstance(editModalEl);
+                    if (inst) inst.hide();
+                });
+            }
+
+            editModalEl.addEventListener('hidden.bs.modal', function () {
+                pendingEditId = null;
+            });
+        })();
+    </script>
 }

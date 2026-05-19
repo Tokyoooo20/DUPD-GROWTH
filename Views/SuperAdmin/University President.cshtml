@@ -1,3 +1,4 @@
+@model DashboardKpiStripViewModel
 @{
     Layout = "~/Views/Shared/_LayoutDashboard.cshtml";
     ViewData["Title"] = "University President";
@@ -25,6 +26,10 @@
     </div>
 </div>
 @section Scripts {
+    @if (!string.IsNullOrEmpty(Model.PapStatusGroupedChartJson))
+    {
+        <script type="application/json" id="pap-status-grouped-chart-data">@Html.Raw(Model.PapStatusGroupedChartJson)</script>
+    }
     <script src="~/lib/chart.js/dist/chart.umd.min.js" asp-append-version="true"></script>
     <script src="~/lib/chartjs-plugin-datalabels/chartjs-plugin-datalabels.min.js" asp-append-version="true"></script>
     <script src="~/js/dashboard-charts.js" asp-append-version="true"></script>
